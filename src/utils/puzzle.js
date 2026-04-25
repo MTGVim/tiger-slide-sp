@@ -24,7 +24,7 @@ export function isAdjacent(a, b, size) {
   return Math.abs(ar - br) + Math.abs(ac - bc) === 1
 }
 
-export function shuffleTiles(tiles, size, steps = size * size * 30) {
+export function shuffleTiles(tiles, size, steps = 200) {
   const shuffled = [...tiles]
   let emptyIndex = shuffled.length - 1
   let previousIndex = -1
@@ -37,6 +37,10 @@ export function shuffleTiles(tiles, size, steps = size * size * 30) {
 
     previousIndex = emptyIndex
     emptyIndex = nextIndex
+  }
+
+  if (isSolved(shuffled)) {
+    return shuffleTiles(tiles, size, steps + 1)
   }
 
   return shuffled

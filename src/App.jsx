@@ -42,7 +42,7 @@ function App() {
   }
 
   function handleTileClick(tileIndex) {
-    if (!hasImage || solved) return
+    if (solved) return
 
     const nextTiles = moveTile(tiles, tileIndex, size)
 
@@ -78,7 +78,6 @@ function App() {
           size={size}
           moves={moves}
           solved={solved}
-          hasImage={hasImage}
           onSizeChange={handleSizeChange}
           onShuffle={() => startPuzzle(size)}
           onReset={handleReset}

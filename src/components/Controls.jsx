@@ -4,7 +4,7 @@ const DIFFICULTIES = [
   { label: 'Hard', size: 5 },
 ]
 
-export function Controls({ size, moves, solved, hasImage, onSizeChange, onShuffle, onReset }) {
+export function Controls({ size, moves, solved, onSizeChange, onShuffle, onReset }) {
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -33,16 +33,14 @@ export function Controls({ size, moves, solved, hasImage, onSizeChange, onShuffl
         <div className="flex gap-2">
           <button
             type="button"
-            className="rounded-full bg-slate-900 px-5 py-2 text-sm font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-            disabled={!hasImage}
+            className="rounded-full bg-slate-900 px-5 py-2 text-sm font-bold text-white transition hover:bg-slate-700"
             onClick={onShuffle}
           >
             셔플
           </button>
           <button
             type="button"
-            className="rounded-full bg-white px-5 py-2 text-sm font-bold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
-            disabled={!hasImage}
+            className="rounded-full bg-white px-5 py-2 text-sm font-bold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
             onClick={onReset}
           >
             리셋
@@ -50,7 +48,7 @@ export function Controls({ size, moves, solved, hasImage, onSizeChange, onShuffl
         </div>
       </div>
 
-      {solved && hasImage ? (
+      {solved ? (
         <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
           완료했습니다! 셔플을 눌러 다시 도전해보세요.
         </p>
