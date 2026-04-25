@@ -35,6 +35,7 @@ function createServiceWorkerPlugin() {
           'pwa-512x512.png',
           'apple-touch-icon.png',
           'sounds/slide-smooth.wav',
+          'sounds/tada-meme.mp3',
         ].map((url) => normalizeAppUrl(url, basePath)),
       ]))
 

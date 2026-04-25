@@ -1,5 +1,6 @@
 let audioContext
 let slideAudio
+let clearAudio
 
 function getAssetUrl(path) {
   return `${import.meta.env.BASE_URL}${path}`
@@ -17,6 +18,18 @@ function getSlideAudio() {
   return slideAudio
 }
 
+function getClearAudio() {
+  if (typeof window === 'undefined') return null
+
+  if (!clearAudio) {
+    clearAudio = new Audio(getAssetUrl('sounds/tada-meme.mp3'))
+    clearAudio.preload = 'auto'
+    clearAudio.volume = 0.55
+  }
+
+  return clearAudio
+}
+
 function getAudioContext() {
   if (typeof window === 'undefined') return null
 
@@ -32,15 +45,6 @@ function getAudioContext() {
   }
 
   return audioContext
-}
-
-function createGain(context, startTime, peakVolume, endTime) {
-  const gain = context.createGain()
-  gain.gain.setValueAtTime(0.0001, startTime)
-  gain.gain.exponentialRampToValueAtTime(peakVolume, startTime + 0.015)
-  gain.gain.exponentialRampToValueAtTime(0.0001, endTime)
-  gain.connect(context.destination)
-  return gain
 }
 
 export function playSlideSound() {
@@ -117,25 +121,10 @@ function playImpactTone(context, startTime, frequency, duration, volume, type, c
   oscillator.stop(startTime + duration)
 }
 
-function playTone(context, startTime, frequency, duration, volume) {
-  const oscillator = context.createOscillator()
-  oscillator.type = 'triangle'
-  oscillator.frequency.setValueAtTime(frequency, startTime)
-  oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.08, startTime + duration)
-
-  const gain = createGain(context, startTime, volume, startTime + duration)
-
-  oscillator.connect(gain)
-  oscillator.start(startTime)
-  oscillator.stop(startTime + duration)
-}
-
 export function playClearSound() {
-  const context = getAudioContext()
-  if (!context) return
+  const audio = getClearAudio()
+  if (!audio) return
 
-  const startTime = context.currentTime
-  playTone(context, startTime, 392, 0.22, 0.16)
-  playTone(context, startTime + 0.18, 523.25, 0.32, 0.2)
-  playTone(context, startTime + 0.18, 659.25, 0.32, 0.11)
+  audio.currentTime = 0
+  audio.play().catch(() => {})
 }

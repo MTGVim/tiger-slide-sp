@@ -11,6 +11,7 @@ const APP_SHELL = [
   '/pwa-192x192.png',
   '/pwa-512x512.png',
   '/apple-touch-icon.png',
+  '/sounds/tada-meme.mp3',
 ]
 
 self.addEventListener('install', (event) => {

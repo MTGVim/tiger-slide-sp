@@ -15,3 +15,7 @@
   - Source: https://opengameart.org/content/swishes-sound-pack
   - License: CC0 1.0 Universal Public Domain Dedication
   - Attribution: not required
+
+- `tada-meme.mp3`: puzzle completion sound.
+  - Source: https://www.myinstants.com/media/sounds/tada-meme.mp3
+  - License: not specified by source
