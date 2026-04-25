@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, posix } from 'node:path'
+import process from 'node:process'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -105,7 +106,10 @@ self.addEventListener('fetch', (event) => {
 `
 }
 
+const base = process.env.GITHUB_PAGES === 'true' ? '/tiger-slide-sp/' : '/'
+
 // https://vite.dev/config/
 export default defineConfig({
+  base,
   plugins: [react(), tailwindcss(), createServiceWorkerPlugin()],
 })
