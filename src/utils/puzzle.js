@@ -1,7 +1,7 @@
 export const DIFFICULTIES = [
-  { label: 'Easy', size: 3 },
-  { label: 'Normal', size: 4 },
-  { label: 'Hard', size: 5 },
+  { label: '쉬움', size: 3 },
+  { label: '보통', size: 4 },
+  { label: '어려움', size: 5 },
 ]
 
 export function createSolvedTiles(size) {

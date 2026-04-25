@@ -197,14 +197,10 @@ function App() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#fde68a,transparent_32%),radial-gradient(circle_at_top_right,#fbcfe8,transparent_30%),radial-gradient(circle_at_bottom_right,#bfdbfe,transparent_34%),linear-gradient(135deg,#fff7ed,#fdf2f8_45%,#eef2ff)] px-4 py-8 text-violet-950 sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <section className="grid gap-6">
-          <header className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-6 text-center shadow-2xl shadow-violet-200/50 backdrop-blur sm:p-8">
-            <p className="text-sm font-black uppercase tracking-[0.3em] text-rose-500">Pastel Number Puzzle</p>
-            <h1 className="mt-3 text-4xl font-black tracking-tight text-violet-950 sm:text-6xl">
-              숫자 블록 슬라이딩 퍼즐
+          <header className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-5 text-center shadow-2xl shadow-violet-200/50 backdrop-blur sm:p-6">
+            <h1 className="text-4xl font-black tracking-tight text-violet-950 sm:text-6xl">
+              Tiger-Slide 🐯
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-base font-semibold text-violet-700/80 sm:text-lg">
-              방향키/WASD 또는 클릭으로 파스텔 숫자 블록을 움직여 순서대로 맞춰보세요.
-            </p>
           </header>
 
           <Controls
@@ -229,13 +225,15 @@ function App() {
 
         <aside className="grid content-start gap-4 sm:grid-cols-2 lg:grid-cols-1">
           <RecordsPanel records={records} />
-          <div className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-5 text-center shadow-xl shadow-violet-200/40 backdrop-blur">
-            <p className="text-sm font-black uppercase tracking-[0.22em] text-violet-600">이동 횟수</p>
-            <p className="mt-2 text-5xl font-black">{game.moves}</p>
-          </div>
-          <div className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-5 text-center shadow-xl shadow-violet-200/40 backdrop-blur">
-            <p className="text-sm font-black uppercase tracking-[0.22em] text-violet-600">시간</p>
-            <p className="mt-2 text-5xl font-black">{formatSeconds(elapsedSeconds)}</p>
+          <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-1 lg:grid-cols-1">
+            <div className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-4 text-center shadow-xl shadow-violet-200/40 backdrop-blur sm:p-5">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-600 sm:text-sm">이동 횟수</p>
+              <p className="mt-1 text-4xl font-black sm:mt-2 sm:text-5xl">{game.moves}</p>
+            </div>
+            <div className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-4 text-center shadow-xl shadow-violet-200/40 backdrop-blur sm:p-5">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-600 sm:text-sm">시간</p>
+              <p className="mt-1 text-4xl font-black sm:mt-2 sm:text-5xl">{formatSeconds(elapsedSeconds)}</p>
+            </div>
           </div>
           {completed ? (
             <div className="rounded-[2rem] border-4 border-white bg-emerald-200 p-5 text-center shadow-xl shadow-emerald-200/60 sm:col-span-2 lg:col-span-1">
