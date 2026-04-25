@@ -6,7 +6,7 @@ const BASE_PATH = '/'
 const APP_SHELL = [
   '/index.html',
   '/manifest.webmanifest',
-  '/favicon.svg',
+  '/favicon.png',
   '/icons.svg',
   '/pwa-192x192.png',
   '/pwa-512x512.png',

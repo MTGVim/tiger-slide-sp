@@ -13,7 +13,7 @@
 |------|-------------|
 | `manifest.webmanifest` | PWA 이름, 아이콘, 표시 모드 등 앱 매니페스트입니다. |
 | `sw.js` | 개발/원본 서비스워커 파일입니다. production build에서는 `vite.config.js`가 `dist/sw.js`를 생성합니다. |
-| `favicon.svg` | 브라우저 favicon입니다. |
+| `favicon.png` | 브라우저 favicon입니다. |
 | `icons.svg` | 앱 아이콘 벡터 자산입니다. |
 | `pwa-192x192.png` | PWA 192px 아이콘입니다. |
 | `pwa-512x512.png` | PWA 512px 아이콘입니다. |
