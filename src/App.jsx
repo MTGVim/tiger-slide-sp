@@ -1,73 +1,219 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controls } from './components/Controls'
 import { PuzzleBoard } from './components/PuzzleBoard'
-import { createSolvedTiles, isSolved, moveTile, shuffleTiles } from './utils/puzzle'
+import { createShuffledTiles, getKeyboardMoveIndex, isSolved, moveTile } from './utils/puzzle'
+import { formatSeconds } from './utils/time'
+
+const DEFAULT_SIZE = 3
+const MOVE_ANIMATION_MS = 170
+const MOVE_KEYS = new Set(['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'])
+const KEY_DIRECTIONS = {
+  arrowup: 'up',
+  w: 'up',
+  arrowdown: 'down',
+  s: 'down',
+  arrowleft: 'left',
+  a: 'left',
+  arrowright: 'right',
+  d: 'right',
+}
+
+function createGame(size) {
+  const tiles = createShuffledTiles(size)
+  const now = Date.now()
+
+  return {
+    tiles,
+    initialTiles: tiles,
+    moves: 0,
+    startedAt: now,
+    completedAt: null,
+  }
+}
 
 function App() {
-  const [size, setSize] = useState(3)
-  const [tiles, setTiles] = useState(() => shuffleTiles(createSolvedTiles(3), 3))
-  const [moves, setMoves] = useState(0)
+  const [size, setSize] = useState(DEFAULT_SIZE)
+  const [game, setGame] = useState(() => createGame(DEFAULT_SIZE))
+  const [now, setNow] = useState(() => Date.now())
+  const [isMoving, setIsMoving] = useState(false)
+  const [movingTile, setMovingTile] = useState(null)
+  const [shakeDirection, setShakeDirection] = useState(null)
+  const moveUnlockTimerRef = useRef(null)
+  const shakeTimerRef = useRef(null)
 
-  const solved = useMemo(() => isSolved(tiles), [tiles])
+  const solved = useMemo(() => isSolved(game.tiles), [game.tiles])
+  const completed = solved && game.moves > 0
+  const elapsedSeconds = Math.max(0, Math.floor(((game.completedAt ?? now) - game.startedAt) / 1000))
 
-  function startPuzzle(nextSize = size) {
-    setTiles(shuffleTiles(createSolvedTiles(nextSize), nextSize))
-    setMoves(0)
-  }
+  useEffect(() => {
+    if (completed) return undefined
 
-  function handleSizeChange(nextSize) {
+    const timerId = window.setInterval(() => {
+      setNow(Date.now())
+    }, 1000)
+
+    return () => window.clearInterval(timerId)
+  }, [completed])
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(moveUnlockTimerRef.current)
+      window.clearTimeout(shakeTimerRef.current)
+    }
+  }, [])
+
+  const startNewGame = useCallback((nextSize = size) => {
+    window.clearTimeout(moveUnlockTimerRef.current)
+    setIsMoving(false)
+    setMovingTile(null)
     setSize(nextSize)
-    startPuzzle(nextSize)
-  }
+    setGame(createGame(nextSize))
+    setNow(Date.now())
+  }, [size])
 
-  function handleTileClick(tileIndex) {
-    if (solved) return
+  const resetPuzzle = useCallback(() => {
+    window.clearTimeout(moveUnlockTimerRef.current)
+    setIsMoving(false)
+    setMovingTile(null)
 
-    const nextTiles = moveTile(tiles, tileIndex, size)
+    const startedAt = Date.now()
+    setGame((current) => ({
+      ...current,
+      tiles: current.initialTiles,
+      moves: 0,
+      startedAt,
+      completedAt: null,
+    }))
+    setNow(startedAt)
+  }, [])
 
-    if (nextTiles === tiles) return
+  const shakeBoard = useCallback((direction) => {
+    setShakeDirection(null)
+    window.clearTimeout(shakeTimerRef.current)
 
-    setTiles(nextTiles)
-    setMoves((currentMoves) => currentMoves + 1)
-  }
+    requestAnimationFrame(() => {
+      setShakeDirection(direction)
+      shakeTimerRef.current = window.setTimeout(() => {
+        setShakeDirection(null)
+      }, 180)
+    })
+  }, [])
 
-  function handleReset() {
-    setTiles(createSolvedTiles(size))
-    setMoves(0)
-  }
+  const handleTileClick = useCallback((tileIndex) => {
+    if (completed || isMoving) return
+
+    const result = moveTile(game.tiles, tileIndex, size)
+    if (!result.moved) return
+
+    setMovingTile(game.tiles[tileIndex])
+    setIsMoving(true)
+    window.clearTimeout(moveUnlockTimerRef.current)
+    moveUnlockTimerRef.current = window.setTimeout(() => {
+      setIsMoving(false)
+      setMovingTile(null)
+    }, MOVE_ANIMATION_MS)
+
+    setGame((current) => {
+      const nextMoves = current.moves + 1
+      const completedAt = isSolved(result.tiles) ? Date.now() : null
+
+      return {
+        ...current,
+        tiles: result.tiles,
+        moves: nextMoves,
+        completedAt,
+      }
+    })
+  }, [completed, game.tiles, isMoving, size])
+
+  useEffect(() => {
+    function handleKeyDown(event) {
+      const target = event.target
+      const isTyping =
+        target instanceof HTMLElement &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'SELECT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      const normalizedKey = event.key.toLowerCase()
+
+      if (isTyping || !MOVE_KEYS.has(normalizedKey)) return
+
+      event.preventDefault()
+      if (completed || isMoving) return
+
+      const tileIndex = getKeyboardMoveIndex(game.tiles, size, event.key)
+      if (tileIndex === -1) {
+        shakeBoard(KEY_DIRECTIONS[normalizedKey])
+        return
+      }
+
+      handleTileClick(tileIndex)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [completed, game.tiles, handleTileClick, isMoving, shakeBoard, size])
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#fde68a,transparent_32%),radial-gradient(circle_at_bottom_right,#bfdbfe,transparent_34%),linear-gradient(135deg,#fff7ed,#fdf2f8_45%,#eef2ff)] px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-5xl flex-col gap-8">
-        <header className="text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.3em] text-rose-500">Pastel Number Puzzle</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-6xl">
-            숫자 블록 슬라이딩 퍼즐
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
-            파스텔톤 숫자 블록을 움직여 순서대로 맞춰보세요. 셔플은 정답 상태에서 빈칸을 이동하는 방식이라 항상 풀 수 있습니다.
-          </p>
-        </header>
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#fde68a,transparent_32%),radial-gradient(circle_at_top_right,#fbcfe8,transparent_30%),radial-gradient(circle_at_bottom_right,#bfdbfe,transparent_34%),linear-gradient(135deg,#fff7ed,#fdf2f8_45%,#eef2ff)] px-4 py-8 text-violet-950 sm:px-6 lg:px-8">
+      <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
+        <section className="grid gap-6">
+          <header className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-6 text-center shadow-2xl shadow-violet-200/50 backdrop-blur sm:p-8">
+            <p className="text-sm font-black uppercase tracking-[0.3em] text-rose-500">Pastel Number Puzzle</p>
+            <h1 className="mt-3 text-4xl font-black tracking-tight text-violet-950 sm:text-6xl">
+              숫자 블록 슬라이딩 퍼즐
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-base font-semibold text-violet-700/80 sm:text-lg">
+              방향키/WASD 또는 클릭으로 파스텔 숫자 블록을 움직여 순서대로 맞춰보세요.
+            </p>
+          </header>
 
-        <Controls
-          size={size}
-          moves={moves}
-          solved={solved}
-          onSizeChange={handleSizeChange}
-          onShuffle={() => startPuzzle(size)}
-          onReset={handleReset}
-        />
+          <Controls
+            size={size}
+            moves={game.moves}
+            elapsedTime={formatSeconds(elapsedSeconds)}
+            solved={completed}
+            onSizeChange={startNewGame}
+            onShuffle={() => startNewGame(size)}
+            onReset={resetPuzzle}
+          />
 
-        <section className="mx-auto grid w-full max-w-[720px] gap-5">
-          <PuzzleBoard tiles={tiles} size={size} onTileClick={handleTileClick} />
-          <div className="rounded-3xl border border-white/70 bg-white/70 p-5 text-sm text-slate-600 shadow-sm backdrop-blur">
-            <ul className="grid gap-2 text-left sm:grid-cols-3">
-              <li>• 인접한 블록만 이동</li>
-              <li>• 3x3 / 4x4 / 5x5 지원</li>
-              <li>• 이동 횟수와 완료 판정 제공</li>
+          <PuzzleBoard
+            tiles={game.tiles}
+            size={size}
+            onTileClick={handleTileClick}
+            disabled={completed || isMoving}
+            movingTile={movingTile}
+            shakeDirection={shakeDirection}
+          />
+        </section>
+
+        <aside className="grid content-start gap-4 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-5 text-center shadow-xl shadow-violet-200/40 backdrop-blur">
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-violet-600">이동 횟수</p>
+            <p className="mt-2 text-5xl font-black">{game.moves}</p>
+          </div>
+          <div className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-5 text-center shadow-xl shadow-violet-200/40 backdrop-blur">
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-violet-600">시간</p>
+            <p className="mt-2 text-5xl font-black">{formatSeconds(elapsedSeconds)}</p>
+          </div>
+          {completed ? (
+            <div className="rounded-[2rem] border-4 border-white bg-emerald-200 p-5 text-center shadow-xl shadow-emerald-200/60 sm:col-span-2 lg:col-span-1">
+              <p className="text-2xl font-black text-emerald-950">완성!</p>
+              <p className="mt-1 text-sm font-bold text-emerald-900">
+                {game.moves}회 이동 · {formatSeconds(elapsedSeconds)}
+              </p>
+            </div>
+          ) : null}
+          <div className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-5 text-sm font-semibold text-violet-700 shadow-xl shadow-violet-200/40 backdrop-blur">
+            <ul className="space-y-2 text-left">
+              <li>• 인접한 블록 클릭</li>
+              <li>• 방향키 또는 WASD 조작</li>
+              <li>• 리셋은 현재 셔플 상태로 복원</li>
             </ul>
           </div>
-        </section>
+        </aside>
       </div>
     </main>
   )

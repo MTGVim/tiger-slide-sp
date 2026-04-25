@@ -1,16 +1,14 @@
-const DIFFICULTIES = [
-  { label: 'Easy', size: 3 },
-  { label: 'Normal', size: 4 },
-  { label: 'Hard', size: 5 },
-]
+import { DIFFICULTIES } from '../utils/puzzle'
 
-export function Controls({ size, moves, solved, onSizeChange, onShuffle, onReset }) {
+export function Controls({ size, elapsedTime, solved, onSizeChange, onShuffle, onReset }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-5 shadow-xl shadow-violet-200/40 backdrop-blur">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="text-left">
-          <p className="text-sm font-medium text-slate-500">Moves</p>
-          <p className="text-4xl font-black text-slate-900">{moves}</p>
+          <p className="text-sm font-black uppercase tracking-[0.22em] text-violet-600">현재 판</p>
+          <p className="mt-1 text-2xl font-black text-violet-950">
+            {size}x{size} · {elapsedTime}
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -18,14 +16,14 @@ export function Controls({ size, moves, solved, onSizeChange, onShuffle, onReset
             <button
               key={difficulty.size}
               type="button"
-              className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+              className={`rounded-2xl border-2 border-white/80 px-4 py-2 font-extrabold shadow-md transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-violet-200 ${
                 size === difficulty.size
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-violet-500 text-white'
+                  : 'bg-violet-100 text-violet-900 hover:bg-violet-200'
               }`}
               onClick={() => onSizeChange(difficulty.size)}
             >
-              {difficulty.label} {difficulty.size}x{difficulty.size}
+              {difficulty.label}
             </button>
           ))}
         </div>
@@ -33,14 +31,14 @@ export function Controls({ size, moves, solved, onSizeChange, onShuffle, onReset
         <div className="flex gap-2">
           <button
             type="button"
-            className="rounded-full bg-slate-900 px-5 py-2 text-sm font-bold text-white transition hover:bg-slate-700"
+            className="rounded-2xl border-2 border-white/80 bg-rose-200 px-4 py-2 font-extrabold text-rose-950 shadow-md transition duration-150 ease-out hover:-translate-y-0.5 hover:bg-rose-300 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-rose-200"
             onClick={onShuffle}
           >
-            셔플
+            새 게임
           </button>
           <button
             type="button"
-            className="rounded-full bg-white px-5 py-2 text-sm font-bold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
+            className="rounded-2xl border-2 border-white/80 bg-amber-200 px-4 py-2 font-extrabold text-amber-950 shadow-md transition duration-150 ease-out hover:-translate-y-0.5 hover:bg-amber-300 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-amber-200"
             onClick={onReset}
           >
             리셋
@@ -49,8 +47,8 @@ export function Controls({ size, moves, solved, onSizeChange, onShuffle, onReset
       </div>
 
       {solved ? (
-        <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
-          완료했습니다! 셔플을 눌러 다시 도전해보세요.
+        <p className="mt-4 rounded-2xl border-2 border-white/80 bg-emerald-200 px-4 py-3 text-sm font-black text-emerald-950">
+          완료했습니다! 새 게임을 눌러 다시 도전해보세요.
         </p>
       ) : null}
     </section>

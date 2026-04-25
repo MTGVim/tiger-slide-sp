@@ -21,3 +21,43 @@ input,
 select {
   font: inherit;
 }
+
+@keyframes board-shake-x {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-6px);
+  }
+
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+@keyframes board-shake-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  25% {
+    transform: translateY(-6px);
+  }
+
+  75% {
+    transform: translateY(6px);
+  }
+}
+
+.board-shake-left,
+.board-shake-right {
+  animation: board-shake-x 160ms ease-in-out;
+}
+
+.board-shake-up,
+.board-shake-down {
+  animation: board-shake-y 160ms ease-in-out;
+}

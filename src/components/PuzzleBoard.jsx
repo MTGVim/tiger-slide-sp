@@ -1,71 +1,79 @@
-import { isAdjacent } from '../utils/puzzle'
+import { createSolvedTiles, getEmptyTile, isAdjacent } from '../utils/puzzle'
 
 const BLOCK_COLORS = [
-  'bg-rose-200 text-rose-900 shadow-rose-200/60',
-  'bg-orange-200 text-orange-900 shadow-orange-200/60',
-  'bg-amber-200 text-amber-900 shadow-amber-200/60',
-  'bg-yellow-200 text-yellow-900 shadow-yellow-200/60',
-  'bg-lime-200 text-lime-900 shadow-lime-200/60',
-  'bg-emerald-200 text-emerald-900 shadow-emerald-200/60',
-  'bg-cyan-200 text-cyan-900 shadow-cyan-200/60',
-  'bg-sky-200 text-sky-900 shadow-sky-200/60',
-  'bg-indigo-200 text-indigo-900 shadow-indigo-200/60',
-  'bg-violet-200 text-violet-900 shadow-violet-200/60',
-  'bg-fuchsia-200 text-fuchsia-900 shadow-fuchsia-200/60',
-  'bg-pink-200 text-pink-900 shadow-pink-200/60',
+  'from-pink-200 to-rose-300',
+  'from-orange-200 to-amber-300',
+  'from-yellow-200 to-lime-200',
+  'from-emerald-200 to-teal-300',
+  'from-cyan-200 to-sky-300',
+  'from-blue-200 to-indigo-300',
+  'from-violet-200 to-purple-300',
+  'from-fuchsia-200 to-pink-300',
 ]
 
-export function PuzzleBoard({ tiles, size, onTileClick }) {
-  const emptyTile = size * size - 1
+export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, shakeDirection }) {
+  const emptyTile = getEmptyTile(size)
   const emptyIndex = tiles.indexOf(emptyTile)
   const tileSize = 100 / size
+  const tilePositions = new Map(tiles.map((tile, index) => [tile, index]))
 
   return (
-    <div className="rounded-[2rem] bg-white/70 p-3 shadow-2xl shadow-slate-300/70 ring-1 ring-white/80 backdrop-blur">
-      <div className="relative aspect-square w-full overflow-hidden rounded-[1.5rem] bg-white/80">
-        <div
-          className="absolute rounded-2xl bg-slate-200/70 ring-2 ring-inset ring-white/80"
-          style={{
-            width: `${tileSize}%`,
-            height: `${tileSize}%`,
-            left: `${(emptyIndex % size) * tileSize}%`,
-            top: `${Math.floor(emptyIndex / size) * tileSize}%`,
-          }}
-        />
+    <div
+      tabIndex={0}
+      className={`relative aspect-square w-full overflow-hidden rounded-[2rem] border-[10px] border-white bg-violet-100 shadow-2xl shadow-violet-200/60 ${
+        shakeDirection ? `board-shake-${shakeDirection}` : ''
+      }`}
+      aria-label={`${size} 곱하기 ${size} 슬라이딩 퍼즐판. 방향키 또는 WASD로 빈칸을 움직일 수 있습니다.`}
+      style={{
+        backgroundImage:
+          'linear-gradient(135deg, rgba(255,255,255,.5) 25%, transparent 25%), linear-gradient(225deg, rgba(255,255,255,.35) 25%, transparent 25%)',
+        backgroundSize: `${tileSize}% ${tileSize}%`,
+      }}
+    >
+      <div
+        className="absolute rounded-3xl border-4 border-dashed border-violet-200/90 bg-white/35"
+        aria-hidden="true"
+        style={{
+          width: `${tileSize}%`,
+          height: `${tileSize}%`,
+          transform: `translate(${(emptyIndex % size) * 100}%, ${Math.floor(emptyIndex / size) * 100}%)`,
+        }}
+      />
 
-        {tiles.map((tileId, index) => {
-          if (tileId === emptyTile) return null
+      {createSolvedTiles(size).map((tile) => {
+        if (tile === emptyTile) return null
 
-          const currentRow = Math.floor(index / size)
-          const currentCol = index % size
-          const canMove = isAdjacent(index, emptyIndex, size)
-          const colorClass = BLOCK_COLORS[tileId % BLOCK_COLORS.length]
+        const index = tilePositions.get(tile)
+        const row = Math.floor(index / size)
+        const col = index % size
+        const canMove = !disabled && isAdjacent(index, emptyIndex, size)
+        const colorClass = BLOCK_COLORS[tile % BLOCK_COLORS.length]
 
-          return (
-            <button
-              key={tileId}
-              type="button"
-              className={`absolute rounded-2xl border-4 border-white/80 shadow-lg transition-all duration-150 ease-out ${colorClass} ${
-                canMove
-                  ? 'cursor-pointer hover:z-10 hover:scale-[1.04] hover:ring-4 hover:ring-white/90'
-                  : 'cursor-default'
-              }`}
-              style={{
-                width: `${tileSize}%`,
-                height: `${tileSize}%`,
-                transform: `translate(${currentCol * 100}%, ${currentRow * 100}%)`,
-              }}
-              disabled={!canMove}
-              onClick={() => onTileClick(index)}
-              aria-label={`${tileId + 1}번 타일`}
-            >
-              <span className="flex h-full w-full items-center justify-center text-4xl font-black drop-shadow-sm sm:text-5xl">
-                {tileId + 1}
-              </span>
-            </button>
-          )
-        })}
-      </div>
+        return (
+          <button
+            key={tile}
+            type="button"
+            className={`absolute grid place-items-center rounded-3xl border-4 border-white bg-gradient-to-br ${colorClass} text-3xl font-black text-violet-950 shadow-lg transition-[transform,box-shadow,filter] duration-150 ease-out focus:z-10 focus:outline-none focus:ring-4 focus:ring-violet-300 sm:text-4xl ${
+              canMove ? 'cursor-pointer hover:brightness-105 hover:drop-shadow-xl' : 'cursor-default'
+            }`}
+            style={{
+              width: `${tileSize}%`,
+              height: `${tileSize}%`,
+              transform: `translate(${col * 100}%, ${row * 100}%) scale(0.94)`,
+              transition: 'transform 150ms ease, box-shadow 150ms ease, filter 150ms ease',
+              willChange: 'transform',
+              zIndex: movingTile === tile ? 2 : 1,
+            }}
+            disabled={disabled || !canMove}
+            onClick={() => onTileClick(index)}
+            aria-label={`블록 ${tile + 1}${canMove ? ', 이동 가능' : ''}`}
+          >
+            <span className="grid h-3/5 w-3/5 place-items-center rounded-2xl bg-white/45 shadow-inner">
+              {tile + 1}
+            </span>
+          </button>
+        )
+      })}
     </div>
   )
 }
