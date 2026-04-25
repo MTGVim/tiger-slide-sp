@@ -293,7 +293,7 @@ function App() {
     }
   }, [])
 
-  const startNewGame = useCallback((nextSize = size) => {
+  const resetGameState = useCallback((nextSize = size) => {
     window.clearTimeout(moveUnlockTimerRef.current)
     window.clearTimeout(landSoundTimerRef.current)
     window.clearTimeout(clearSoundTimerRef.current)
@@ -302,8 +302,12 @@ function App() {
     setSize(nextSize)
     setGame(createGame(nextSize))
     setNow(Date.now())
+  }, [size])
+
+  const startNewGame = useCallback((nextSize = size) => {
+    resetGameState(nextSize)
     loadRandomImage(imageModeSettings)
-  }, [imageModeSettings, loadRandomImage, size])
+  }, [imageModeSettings, loadRandomImage, resetGameState, size])
 
   const resetPuzzle = useCallback(() => {
     window.clearTimeout(moveUnlockTimerRef.current)
@@ -324,12 +328,14 @@ function App() {
   }, [])
 
   const handleImageModeEnabledChange = useCallback((enabled) => {
+    resetGameState(size)
     setImageModeSettings((current) => ({ ...current, enabled }))
-  }, [])
+  }, [resetGameState, size])
 
   const handleImageSourceChange = useCallback((sourceId) => {
+    resetGameState(size)
     setImageModeSettings((current) => ({ ...current, sourceId }))
-  }, [])
+  }, [resetGameState, size])
 
   const shakeBoard = useCallback((direction) => {
     setShakeDirection(null)
