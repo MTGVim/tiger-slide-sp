@@ -203,14 +203,16 @@ function App() {
             </h1>
           </header>
 
-          <PuzzleBoard
-            tiles={game.tiles}
-            size={size}
-            onTileClick={handleTileClick}
-            disabled={completed || isMoving}
-            movingTile={movingTile}
-            shakeDirection={shakeDirection}
-          />
+          <div className="mx-auto w-full max-w-[640px]">
+            <PuzzleBoard
+              tiles={game.tiles}
+              size={size}
+              onTileClick={handleTileClick}
+              disabled={completed || isMoving}
+              movingTile={movingTile}
+              shakeDirection={shakeDirection}
+            />
+          </div>
 
           <Controls
             size={size}
@@ -233,13 +235,6 @@ function App() {
               </p>
             </div>
           ) : null}
-          <div className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-5 text-sm font-semibold text-violet-700 shadow-xl shadow-violet-200/40 backdrop-blur">
-            <ul className="space-y-2 text-left">
-              <li>• 인접한 블록 클릭</li>
-              <li>• 방향키 또는 WASD 조작</li>
-              <li>• 리셋은 현재 셔플 상태로 복원</li>
-            </ul>
-          </div>
         </aside>
       </div>
     </main>

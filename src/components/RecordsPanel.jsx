@@ -4,33 +4,28 @@ import { formatSeconds } from '../utils/time'
 export function RecordsPanel({ records }) {
   return (
     <section
-      className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-5 shadow-xl shadow-violet-200/40 backdrop-blur"
+      className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-4 shadow-xl shadow-violet-200/40 backdrop-blur sm:p-5"
       aria-label="개인 최고 기록"
     >
-      <h2 className="text-lg font-black text-violet-950">최고 기록</h2>
-      <div className="mt-3 grid gap-3">
+      <h2 className="text-base font-black text-violet-950 sm:text-lg">최고 기록</h2>
+      <div className="mt-2 grid gap-2 sm:mt-3 sm:gap-3">
         {DIFFICULTIES.map((difficulty) => {
           const record = records[difficulty.size]
 
           return (
             <div
               key={difficulty.size}
-              className="flex items-center justify-between gap-3 rounded-2xl bg-white/70 px-4 py-3"
+              className="flex items-center justify-between gap-2 rounded-2xl bg-white/70 px-3 py-2 text-sm sm:gap-3 sm:px-4 sm:py-3"
             >
-              <div>
-                <p className="font-black text-violet-900">{difficulty.label}</p>
-                <p className="text-sm font-semibold text-violet-600">
-                  {difficulty.size}x{difficulty.size}
-                </p>
-              </div>
+              <p className="shrink-0 font-black text-violet-900">
+                {difficulty.label} <span className="font-semibold text-violet-600">{difficulty.size}x{difficulty.size}</span>
+              </p>
               {record ? (
-                <p className="text-right text-sm font-black text-violet-900">
-                  {record.moves}회 이동
-                  <br />
-                  <span className="text-violet-600">{formatSeconds(record.seconds)}</span>
+                <p className="truncate text-right text-xs font-black text-violet-900 sm:text-sm">
+                  {record.moves}회 · <span className="text-violet-600">{formatSeconds(record.seconds)}</span>
                 </p>
               ) : (
-                <p className="text-sm font-bold text-violet-400">기록 없음</p>
+                <p className="text-xs font-bold text-violet-400 sm:text-sm">없음</p>
               )}
             </div>
           )
