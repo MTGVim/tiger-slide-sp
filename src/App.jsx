@@ -6,7 +6,7 @@ import { PwaUpdatePrompt } from './components/PwaUpdatePrompt'
 import { RecordsPanel } from './components/RecordsPanel'
 import { createShuffledTiles, getKeyboardMoveIndex, isSolved, moveTile } from './utils/puzzle'
 import { readRecords, saveBestRecord } from './utils/records'
-import { playClearSound, playSlideSound } from './utils/sound'
+import { playClearSound, playSlideLandSound, playSlideSound } from './utils/sound'
 import { formatSeconds } from './utils/time'
 
 const DEFAULT_SIZE = 3
@@ -89,13 +89,23 @@ function App() {
   const [movingTile, setMovingTile] = useState(null)
   const [shakeDirection, setShakeDirection] = useState(null)
   const [soundMuted, setSoundMuted] = useState(false)
+  const appScrollRef = useRef(null)
   const boardRef = useRef(null)
   const moveUnlockTimerRef = useRef(null)
   const shakeTimerRef = useRef(null)
+  const landSoundTimerRef = useRef(null)
+  const clearSoundTimerRef = useRef(null)
 
   const solved = useMemo(() => isSolved(game.tiles), [game.tiles])
   const completed = solved && game.moves > 0
   const elapsedSeconds = Math.max(0, Math.floor(((game.completedAt ?? now) - game.startedAt) / 1000))
+
+  useEffect(() => {
+    if (soundMuted) {
+      window.clearTimeout(landSoundTimerRef.current)
+      window.clearTimeout(clearSoundTimerRef.current)
+    }
+  }, [soundMuted])
 
   useEffect(() => {
     if (completed) return undefined
@@ -108,14 +118,49 @@ function App() {
   }, [completed])
 
   useEffect(() => {
+    const appScrollElement = appScrollRef.current
+    if (!appScrollElement) return undefined
+
+    function keepTouchWithinAppScroll(event) {
+      const canScroll = appScrollElement.scrollHeight > appScrollElement.clientHeight
+      if (!canScroll) return
+
+      const atTop = appScrollElement.scrollTop <= 0
+      const atBottom = appScrollElement.scrollTop + appScrollElement.clientHeight >= appScrollElement.scrollHeight
+      const touch = event.touches[0]
+      if (!touch || event.touches.length !== 1) return
+
+      const movingDown = touch.clientY > keepTouchWithinAppScroll.lastY
+      const movingUp = touch.clientY < keepTouchWithinAppScroll.lastY
+      keepTouchWithinAppScroll.lastY = touch.clientY
+
+      if ((atTop && movingDown) || (atBottom && movingUp)) {
+        event.preventDefault()
+      }
+    }
+
+    function captureTouchStart(event) {
+      const touch = event.touches[0]
+      keepTouchWithinAppScroll.lastY = touch?.clientY ?? 0
+    }
+
+    appScrollElement.addEventListener('touchstart', captureTouchStart, { passive: true })
+    appScrollElement.addEventListener('touchmove', keepTouchWithinAppScroll, { passive: false })
+
     return () => {
+      appScrollElement.removeEventListener('touchstart', captureTouchStart)
+      appScrollElement.removeEventListener('touchmove', keepTouchWithinAppScroll)
       window.clearTimeout(moveUnlockTimerRef.current)
       window.clearTimeout(shakeTimerRef.current)
+      window.clearTimeout(landSoundTimerRef.current)
+      window.clearTimeout(clearSoundTimerRef.current)
     }
   }, [])
 
   const startNewGame = useCallback((nextSize = size) => {
     window.clearTimeout(moveUnlockTimerRef.current)
+    window.clearTimeout(landSoundTimerRef.current)
+    window.clearTimeout(clearSoundTimerRef.current)
     setIsMoving(false)
     setMovingTile(null)
     setSize(nextSize)
@@ -125,6 +170,8 @@ function App() {
 
   const resetPuzzle = useCallback(() => {
     window.clearTimeout(moveUnlockTimerRef.current)
+    window.clearTimeout(landSoundTimerRef.current)
+    window.clearTimeout(clearSoundTimerRef.current)
     setIsMoving(false)
     setMovingTile(null)
 
@@ -157,7 +204,11 @@ function App() {
     const result = moveTile(game.tiles, tileIndex, size)
     if (!result.moved) return
 
-    if (!soundMuted) playSlideSound()
+    if (!soundMuted) {
+      playSlideSound()
+      window.clearTimeout(landSoundTimerRef.current)
+      landSoundTimerRef.current = window.setTimeout(playSlideLandSound, MOVE_ANIMATION_MS - 20)
+    }
     setMovingTile(game.tiles[tileIndex])
     setIsMoving(true)
     window.clearTimeout(moveUnlockTimerRef.current)
@@ -178,7 +229,10 @@ function App() {
       })
 
       setRecords(nextRecordState.records)
-      if (!soundMuted) playClearSound()
+      if (!soundMuted) {
+        window.clearTimeout(clearSoundTimerRef.current)
+        clearSoundTimerRef.current = window.setTimeout(playClearSound, MOVE_ANIMATION_MS + 40)
+      }
       launchClearConfetti(boardRef.current)
     }
 
@@ -220,7 +274,7 @@ function App() {
   }, [completed, game.tiles, handleTileClick, isMoving, shakeBoard, size])
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#fde68a,transparent_32%),radial-gradient(circle_at_top_right,#fbcfe8,transparent_30%),radial-gradient(circle_at_bottom_right,#bfdbfe,transparent_34%),linear-gradient(135deg,#fff7ed,#fdf2f8_45%,#eef2ff)] px-2 py-3 text-violet-950 min-[360px]:px-3 sm:px-6 sm:py-8 lg:px-8">
+    <main ref={appScrollRef} className="fixed inset-0 overflow-y-auto overscroll-none bg-[radial-gradient(circle_at_top_left,#fde68a,transparent_32%),radial-gradient(circle_at_top_right,#fbcfe8,transparent_30%),radial-gradient(circle_at_bottom_right,#bfdbfe,transparent_34%),linear-gradient(135deg,#fff7ed,#fdf2f8_45%,#eef2ff)] px-2 py-3 text-violet-950 min-[360px]:px-3 sm:px-6 sm:py-8 lg:px-8">
       <PwaUpdatePrompt />
       <div className="mx-auto flex w-full max-w-[600px] min-w-0 flex-col gap-2.5 sm:gap-4 lg:max-w-5xl lg:gap-6">
         <header className="grid gap-1.5 rounded-[1.25rem] border-2 border-white/80 bg-white/70 p-2 text-center shadow-2xl shadow-violet-200/50 backdrop-blur sm:gap-3 sm:rounded-[2rem] sm:border-4 sm:p-4 lg:p-5">
@@ -242,9 +296,18 @@ function App() {
         <div className="flex flex-col items-start gap-3 sm:gap-4 lg:flex-row lg:justify-center lg:gap-6">
           <div className="relative w-full lg:max-w-[720px] lg:flex-1">
             {completed && (
-              <div className="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2 rounded-2xl border-2 border-white/90 bg-white px-4 py-2 text-center text-sm font-black text-violet-950 shadow-xl shadow-violet-200/50 sm:rounded-3xl sm:border-4 sm:px-6 sm:py-3 sm:text-xl">
-                <p>축하해요!</p>
-                <p className="mt-0.5 text-xs text-violet-600 sm:text-sm">완성!</p>
+              <div className="absolute left-1/2 top-0 z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-2xl border-2 border-white/90 bg-white px-3 py-2 text-center text-sm font-black text-violet-950 shadow-2xl shadow-violet-950/30 sm:rounded-3xl sm:border-4 sm:px-5 sm:py-3 sm:text-xl">
+                <div>
+                  <p>축하해요!</p>
+                  <p className="mt-0.5 text-xs text-violet-600 sm:text-sm">완성!</p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-xl border-2 border-white/80 bg-rose-200 px-3 py-1.5 text-xs font-extrabold text-rose-950 shadow-sm transition duration-150 ease-out hover:-translate-y-0.5 hover:bg-rose-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-rose-200 sm:px-4 sm:py-2 sm:text-sm"
+                  onClick={() => startNewGame(size)}
+                >
+                  새 게임
+                </button>
               </div>
             )}
             <div ref={boardRef}>

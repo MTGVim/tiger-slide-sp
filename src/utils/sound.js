@@ -51,6 +51,15 @@ export function playSlideSound() {
   audio.play().catch(() => {})
 }
 
+export function playSlideLandSound() {
+  const context = getAudioContext()
+  if (!context) return
+
+  const startTime = context.currentTime
+  playTone(context, startTime, 180, 0.055, 0.09)
+  playTone(context, startTime + 0.01, 280, 0.04, 0.045)
+}
+
 function playTone(context, startTime, frequency, duration, volume) {
   const oscillator = context.createOscillator()
   oscillator.type = 'triangle'

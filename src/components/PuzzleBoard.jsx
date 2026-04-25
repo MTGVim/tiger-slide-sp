@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { createSolvedTiles, getEmptyTile, isAdjacent } from '../utils/puzzle'
 
 const BLOCK_COLORS = [
@@ -11,12 +12,83 @@ const BLOCK_COLORS = [
   'from-fuchsia-200 to-pink-300',
 ]
 
+const SWIPE_THRESHOLD_PX = 24
+
+function isSwipeTowardEmpty(tileIndex, emptyIndex, size, dx, dy) {
+  const tileRow = Math.floor(tileIndex / size)
+  const tileCol = tileIndex % size
+  const emptyRow = Math.floor(emptyIndex / size)
+  const emptyCol = emptyIndex % size
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (emptyRow !== tileRow) return false
+    return (emptyCol < tileCol && dx < 0) || (emptyCol > tileCol && dx > 0)
+  }
+
+  if (emptyCol !== tileCol) return false
+  return (emptyRow < tileRow && dy < 0) || (emptyRow > tileRow && dy > 0)
+}
+
 export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, shakeDirection }) {
   const emptyTile = getEmptyTile(size)
   const emptyIndex = tiles.indexOf(emptyTile)
   const tileSize = 100 / size
   const tilePositions = new Map(tiles.map((tile, index) => [tile, index]))
   const numberFontSize = `clamp(1.45rem, ${22 / size}vw, ${10 / size}rem)`
+  const gestureRef = useRef(null)
+  const suppressClickRef = useRef(false)
+
+  function handlePointerDown(event, index, canMove) {
+    if (!canMove || !event.isPrimary) return
+
+    gestureRef.current = {
+      pointerId: event.pointerId,
+      tileIndex: index,
+      startX: event.clientX,
+      startY: event.clientY,
+    }
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+  }
+
+  function handlePointerUp(event, index) {
+    const gesture = gestureRef.current
+    if (!gesture || gesture.pointerId !== event.pointerId || gesture.tileIndex !== index) return
+
+    gestureRef.current = null
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+
+    const dx = event.clientX - gesture.startX
+    const dy = event.clientY - gesture.startY
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_THRESHOLD_PX) return
+
+    suppressClickRef.current = true
+    window.setTimeout(() => {
+      suppressClickRef.current = false
+    }, 80)
+
+    if (isSwipeTowardEmpty(index, emptyIndex, size, dx, dy)) {
+      onTileClick(index)
+    }
+  }
+
+  function handlePointerCancel(event) {
+    const gesture = gestureRef.current
+    if (!gesture || gesture.pointerId !== event.pointerId) return
+
+    gestureRef.current = null
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+  }
+
+  function handleClick(event, tile) {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false
+      event.preventDefault()
+      event.stopPropagation()
+      return
+    }
+
+    onTileClick(tilePositions.get(tile))
+  }
 
   return (
     <div
@@ -26,6 +98,7 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
       }`}
       aria-label={`${size} 곱하기 ${size} 슬라이딩 퍼즐판. 방향키 또는 WASD로 빈칸을 움직일 수 있습니다.`}
       style={{
+        touchAction: 'pan-y',
         backgroundImage:
           'linear-gradient(135deg, rgba(255,255,255,.5) 25%, transparent 25%), linear-gradient(225deg, rgba(255,255,255,.35) 25%, transparent 25%)',
         backgroundSize: `${tileSize}% ${tileSize}%`,
@@ -60,6 +133,7 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
             style={{
               width: `${tileSize}%`,
               height: `${tileSize}%`,
+              touchAction: canMove ? 'none' : 'pan-y',
               transform: `translate(${col * 100}%, ${row * 100}%) scale(0.94)`,
               transition: 'transform 150ms ease, box-shadow 150ms ease, filter 150ms ease',
               willChange: 'transform',
@@ -67,7 +141,10 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
               fontSize: numberFontSize,
             }}
             disabled={disabled || !canMove}
-            onClick={() => onTileClick(index)}
+            onPointerDown={(event) => handlePointerDown(event, index, canMove)}
+            onPointerUp={(event) => handlePointerUp(event, index)}
+            onPointerCancel={handlePointerCancel}
+            onClick={(event) => handleClick(event, tile)}
             aria-label={`블록 ${tile + 1}${canMove ? ', 이동 가능' : ''}`}
           >
             <span className="flex h-[78%] w-[78%] items-center justify-center rounded-2xl bg-white/45 leading-none shadow-inner">

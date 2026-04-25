@@ -1,0 +1,68 @@
+<!-- Generated: 2026-04-25 | Updated: 2026-04-25 -->
+
+# tiger-slide-sp
+
+## Purpose
+
+React와 Vite로 만든 슬라이딩 퍼즐 PWA입니다. 퍼즐 보드, 난이도 선택, 기록 저장, 소리 효과, 오프라인 캐시, GitHub Pages 배포 설정이 이 저장소에 함께 들어 있습니다.
+
+## Key Files
+
+| File | Description |
+|------|-------------|
+| `package.json` | npm 스크립트와 React, Vite, Tailwind, 테스트 의존성을 정의합니다. |
+| `package-lock.json` | npm 의존성 잠금 파일입니다. |
+| `vite.config.js` | Vite 설정, GitHub Pages base path, 서비스워커 생성 플러그인을 정의합니다. |
+| `eslint.config.js` | ESLint 설정입니다. |
+| `index.html` | Vite 앱의 HTML 진입점입니다. |
+| `README.md` | 기본 프로젝트 설명 문서입니다. |
+
+## Subdirectories
+
+| Directory | Purpose |
+|-----------|---------|
+| `src/` | React 앱 소스, 컴포넌트, 유틸리티, 테스트를 포함합니다. See `src/AGENTS.md`. |
+| `public/` | PWA 아이콘, 매니페스트, 서비스워커 원본, 소리 자산을 포함합니다. See `public/AGENTS.md`. |
+| `.github/` | GitHub Actions 배포 워크플로를 포함합니다. See `.github/AGENTS.md`. |
+| `.claude/` | Claude Code 및 OMC 프로젝트 설정을 포함합니다. |
+| `.omc/` | OMC 계획, 세션, 상태 파일을 포함합니다. 일반 코드 문서 생성 대상이 아닙니다. |
+
+## For AI Agents
+
+### Working In This Directory
+
+- 사용자에게 보이는 문서나 계획은 기본적으로 한국어로 작성합니다.
+- `dist/`, `node_modules/`, `.omc/state/` 같은 생성물과 상태 파일은 직접 편집하지 않습니다.
+- GitHub Pages 빌드 경로는 `GITHUB_PAGES=true npm run build`일 때 `/tiger-slide-sp/`여야 합니다.
+- 서비스워커 캐시 목록은 `vite.config.js`의 생성 플러그인과 `public/sw.js` 원본의 역할을 구분해서 다룹니다.
+
+### Testing Requirements
+
+- 일반 검증: `npm run lint && npm test -- --run`
+- 배포 검증: `GITHUB_PAGES=true npm run build`
+- GitHub Pages/PWA 변경 후에는 `dist/index.html`의 `/tiger-slide-sp/assets/`, `dist/sw.js`의 `"/tiger-slide-sp/sounds/slide-smooth.wav"`, `const BASE_PATH = "/tiger-slide-sp/"`를 확인합니다.
+
+### Common Patterns
+
+- React 함수 컴포넌트와 훅을 사용합니다.
+- Tailwind CSS 유틸리티 클래스로 UI를 구성합니다.
+- 퍼즐 규칙은 `src/utils/puzzle.js`에 두고 UI에서는 결과를 사용합니다.
+- 기록 저장은 `src/utils/records.js`를 통해 localStorage를 감싸서 처리합니다.
+
+## Dependencies
+
+### Internal
+
+- `src/App.jsx`가 게임 상태와 주요 상호작용을 조정합니다.
+- `src/components/`가 화면 구성 요소를 제공합니다.
+- `src/utils/`가 퍼즐, 기록, 소리, 서비스워커 유틸리티를 제공합니다.
+
+### External
+
+- React 19: UI 렌더링
+- Vite 8: 개발 서버와 빌드
+- Tailwind CSS 4: 스타일링
+- Vitest: 유틸리티 테스트
+- canvas-confetti: 퍼즐 완료 효과
+
+<!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->
