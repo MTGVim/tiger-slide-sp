@@ -1,7 +1,11 @@
+import confetti from 'canvas-confetti'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controls } from './components/Controls'
 import { PuzzleBoard } from './components/PuzzleBoard'
+import { RecordsPanel } from './components/RecordsPanel'
 import { createShuffledTiles, getKeyboardMoveIndex, isSolved, moveTile } from './utils/puzzle'
+import { readRecords, saveBestRecord } from './utils/records'
+import { playClearSound, playSlideSound } from './utils/sound'
 import { formatSeconds } from './utils/time'
 
 const DEFAULT_SIZE = 3
@@ -16,6 +20,27 @@ const KEY_DIRECTIONS = {
   a: 'left',
   arrowright: 'right',
   d: 'right',
+}
+
+function launchClearConfetti() {
+  const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  if (prefersReducedMotion) return
+
+  confetti({
+    particleCount: 90,
+    angle: 60,
+    spread: 60,
+    origin: { x: 0, y: 0.78 },
+    colors: ['#facc15', '#fb7185', '#38bdf8', '#a78bfa', '#34d399'],
+  })
+
+  confetti({
+    particleCount: 90,
+    angle: 120,
+    spread: 60,
+    origin: { x: 1, y: 0.78 },
+    colors: ['#f97316', '#f9a8d4', '#67e8f9', '#c4b5fd', '#bef264'],
+  })
 }
 
 function createGame(size) {
@@ -34,6 +59,7 @@ function createGame(size) {
 function App() {
   const [size, setSize] = useState(DEFAULT_SIZE)
   const [game, setGame] = useState(() => createGame(DEFAULT_SIZE))
+  const [records, setRecords] = useState(() => readRecords())
   const [now, setNow] = useState(() => Date.now())
   const [isMoving, setIsMoving] = useState(false)
   const [movingTile, setMovingTile] = useState(null)
@@ -105,6 +131,7 @@ function App() {
     const result = moveTile(game.tiles, tileIndex, size)
     if (!result.moved) return
 
+    playSlideSound()
     setMovingTile(game.tiles[tileIndex])
     setIsMoving(true)
     window.clearTimeout(moveUnlockTimerRef.current)
@@ -113,18 +140,29 @@ function App() {
       setMovingTile(null)
     }, MOVE_ANIMATION_MS)
 
-    setGame((current) => {
-      const nextMoves = current.moves + 1
-      const completedAt = isSolved(result.tiles) ? Date.now() : null
+    const nextMoves = game.moves + 1
+    const completedAt = isSolved(result.tiles) ? Date.now() : null
 
-      return {
-        ...current,
-        tiles: result.tiles,
+    if (completedAt) {
+      const seconds = Math.max(0, Math.floor((completedAt - game.startedAt) / 1000))
+      const nextRecordState = saveBestRecord(size, {
         moves: nextMoves,
-        completedAt,
-      }
+        seconds,
+        completedAt: new Date(completedAt).toISOString(),
+      })
+
+      setRecords(nextRecordState.records)
+      playClearSound()
+      launchClearConfetti()
+    }
+
+    setGame({
+      ...game,
+      tiles: result.tiles,
+      moves: nextMoves,
+      completedAt,
     })
-  }, [completed, game.tiles, isMoving, size])
+  }, [completed, game, isMoving, size])
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -190,6 +228,7 @@ function App() {
         </section>
 
         <aside className="grid content-start gap-4 sm:grid-cols-2 lg:grid-cols-1">
+          <RecordsPanel records={records} />
           <div className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-5 text-center shadow-xl shadow-violet-200/40 backdrop-blur">
             <p className="text-sm font-black uppercase tracking-[0.22em] text-violet-600">이동 횟수</p>
             <p className="mt-2 text-5xl font-black">{game.moves}</p>
