@@ -1,3 +1,4 @@
+import { IMAGE_SOURCES } from '../utils/imageSources'
 import { DIFFICULTIES } from '../utils/puzzle'
 
 export function SoundMuteButton({ soundMuted, onSoundMutedChange }) {
@@ -34,6 +35,11 @@ export function Controls({
   size,
   moves,
   elapsedTime,
+  imageModeEnabled,
+  imageSourceId,
+  imageLoading,
+  onImageModeEnabledChange,
+  onImageSourceChange,
   onSizeChange,
   onShuffle,
   onReset,
@@ -70,7 +76,7 @@ export function Controls({
             className="rounded-lg border-2 border-white/80 bg-rose-200 px-2 py-1 text-xs font-extrabold text-rose-950 shadow-sm transition duration-150 ease-out hover:-translate-y-0.5 hover:bg-rose-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-rose-200 sm:rounded-xl sm:px-3 sm:py-1.5 sm:text-sm"
             onClick={onShuffle}
           >
-            새 게임
+            {imageLoading ? '불러오는 중' : '새 게임'}
           </button>
           <button
             type="button"
@@ -79,6 +85,33 @@ export function Controls({
           >
             다시하기
           </button>
+        </div>
+
+        <div className="flex flex-row items-center gap-1.5 min-[360px]:gap-2">
+          <button
+            type="button"
+            className={`rounded-lg border-2 border-white/80 px-2 py-1 text-xs font-extrabold shadow-sm transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 sm:rounded-xl sm:px-3 sm:py-1.5 sm:text-sm ${
+              imageModeEnabled
+                ? 'bg-sky-400 text-sky-950 hover:bg-sky-300 focus:ring-sky-200'
+                : 'bg-sky-100 text-sky-900 hover:bg-sky-200 focus:ring-sky-200'
+            }`}
+            aria-pressed={imageModeEnabled}
+            onClick={() => onImageModeEnabledChange(!imageModeEnabled)}
+          >
+            {imageModeEnabled ? '이미지 모드 ✓' : '이미지 모드 □'}
+          </button>
+          {imageModeEnabled && (
+            <select
+              className="rounded-lg border-2 border-white/80 bg-white/80 px-2 py-1 text-xs font-extrabold text-sky-950 shadow-sm focus:outline-none focus:ring-4 focus:ring-sky-200 sm:rounded-xl sm:px-3 sm:py-1.5 sm:text-sm"
+              value={imageSourceId}
+              onChange={(event) => onImageSourceChange(event.target.value)}
+              aria-label="랜덤 이미지 소스"
+            >
+              {IMAGE_SOURCES.map((source) => (
+                <option key={source.id} value={source.id}>{source.label}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
     </section>

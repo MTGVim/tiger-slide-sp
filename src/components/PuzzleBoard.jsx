@@ -29,12 +29,14 @@ function isSwipeTowardEmpty(tileIndex, emptyIndex, size, dx, dy) {
   return (emptyRow < tileRow && dy < 0) || (emptyRow > tileRow && dy > 0)
 }
 
-export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, shakeDirection }) {
+export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, shakeDirection, imageUrl, imageLoading, completed }) {
   const emptyTile = getEmptyTile(size)
   const emptyIndex = tiles.indexOf(emptyTile)
   const tileSize = 100 / size
   const tilePositions = new Map(tiles.map((tile, index) => [tile, index]))
   const numberFontSize = `clamp(1.45rem, ${22 / size}vw, ${10 / size}rem)`
+  const revealImage = Boolean(imageUrl && completed)
+  const showThumbnail = Boolean(imageUrl && !completed && !imageLoading)
   const gestureRef = useRef(null)
   const suppressClickRef = useRef(false)
 
@@ -99,13 +101,47 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
       aria-label={`${size} 곱하기 ${size} 슬라이딩 퍼즐판. 방향키 또는 WASD로 빈칸을 움직일 수 있습니다.`}
       style={{
         touchAction: 'pan-y',
-        backgroundImage:
-          'linear-gradient(135deg, rgba(255,255,255,.5) 25%, transparent 25%), linear-gradient(225deg, rgba(255,255,255,.35) 25%, transparent 25%)',
-        backgroundSize: `${tileSize}% ${tileSize}%`,
+        backgroundImage: revealImage
+          ? `url(${imageUrl})`
+          : 'linear-gradient(135deg, rgba(255,255,255,.5) 25%, transparent 25%), linear-gradient(225deg, rgba(255,255,255,.35) 25%, transparent 25%)',
+        backgroundPosition: revealImage ? 'center' : undefined,
+        backgroundRepeat: revealImage ? 'no-repeat' : undefined,
+        backgroundSize: revealImage ? 'cover' : `${tileSize}% ${tileSize}%`,
       }}
     >
+      {showThumbnail && (
+        <div className="pointer-events-none absolute right-2 top-2 z-20 size-16 overflow-hidden rounded-xl border-2 border-white/90 bg-white shadow-xl shadow-violet-950/25 sm:right-4 sm:top-4 sm:size-24 sm:rounded-2xl sm:border-4">
+          <img className="size-full object-cover" src={imageUrl} alt="퍼즐 원본 이미지 미리보기" />
+        </div>
+      )}
+
+      {imageLoading && (
+        <div className="absolute inset-0 z-10 bg-violet-100" aria-label="이미지 퍼즐 불러오는 중">
+          <div
+            className="grid h-full gap-1.5 p-1.5 sm:gap-3 sm:p-3"
+            style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
+          >
+            {Array.from({ length: size * size }).map((_, index) => (
+              <div
+                key={index}
+                className="animate-pulse rounded-xl border-2 border-white/70 bg-gradient-to-br from-white/90 via-violet-100 to-sky-100 shadow-inner sm:rounded-3xl sm:border-4"
+                aria-hidden="true"
+              />
+            ))}
+          </div>
+          <div className="absolute inset-0 grid place-items-center bg-white/20">
+            <div className="grid place-items-center gap-2 rounded-2xl border-2 border-white/90 bg-white/85 px-4 py-3 text-xs font-black text-violet-950 shadow-xl shadow-violet-950/20 sm:rounded-3xl sm:border-4 sm:px-5 sm:py-4 sm:text-sm">
+              <div className="size-7 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600 sm:size-9" aria-hidden="true" />
+              <span>이미지 불러오는 중</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div
-        className="absolute rounded-xl border-2 border-dashed border-violet-200/90 bg-white/35 sm:rounded-3xl sm:border-4"
+        className={`absolute rounded-xl border-2 border-dashed border-violet-200/90 bg-white/35 transition-opacity duration-500 ease-out sm:rounded-3xl sm:border-4 ${
+          revealImage ? 'opacity-0' : 'opacity-100'
+        }`}
         aria-hidden="true"
         style={{
           width: `${tileSize}%`,
@@ -122,23 +158,33 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
         const col = index % size
         const canMove = !disabled && isAdjacent(index, emptyIndex, size)
         const colorClass = BLOCK_COLORS[tile % BLOCK_COLORS.length]
+        const imageRow = Math.floor(tile / size)
+        const imageCol = tile % size
+        const tileStyle = imageUrl
+          ? {
+              backgroundImage: `url(${imageUrl})`,
+              backgroundSize: `${size * 100}% ${size * 100}%`,
+              backgroundPosition: `${(imageCol / (size - 1)) * 100}% ${(imageRow / (size - 1)) * 100}%`,
+            }
+          : null
 
         return (
           <button
             key={tile}
             type="button"
-            className={`absolute grid place-items-center rounded-xl border-2 border-white bg-gradient-to-br ${colorClass} font-black text-violet-950 shadow-lg transition-[transform,box-shadow,filter] duration-150 ease-out focus:z-10 focus:outline-none focus:ring-4 focus:ring-violet-300 sm:rounded-3xl sm:border-4 ${
-              canMove ? 'cursor-pointer hover:brightness-105 hover:drop-shadow-xl' : 'cursor-default'
-            }`}
+            className={`absolute grid place-items-center rounded-xl border-2 border-white font-black text-violet-950 shadow-lg transition-[transform,box-shadow,filter,opacity] duration-500 ease-out focus:z-10 focus:outline-none focus:ring-4 focus:ring-violet-300 sm:rounded-3xl sm:border-4 ${
+              imageUrl ? 'bg-white bg-no-repeat' : `bg-gradient-to-br ${colorClass}`
+            } ${revealImage ? 'opacity-0' : 'opacity-100'} ${canMove ? 'cursor-pointer hover:brightness-105 hover:drop-shadow-xl' : 'cursor-default'}`}
             style={{
               width: `${tileSize}%`,
               height: `${tileSize}%`,
               touchAction: canMove ? 'none' : 'pan-y',
               transform: `translate(${col * 100}%, ${row * 100}%) scale(0.94)`,
-              transition: 'transform 150ms ease, box-shadow 150ms ease, filter 150ms ease',
+              transition: 'transform 150ms ease, box-shadow 150ms ease, filter 150ms ease, opacity 500ms ease',
               willChange: 'transform',
               zIndex: movingTile === tile ? 2 : 1,
               fontSize: numberFontSize,
+              ...tileStyle,
             }}
             disabled={disabled || !canMove}
             onPointerDown={(event) => handlePointerDown(event, index, canMove)}
@@ -147,9 +193,11 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
             onClick={(event) => handleClick(event, tile)}
             aria-label={`블록 ${tile + 1}${canMove ? ', 이동 가능' : ''}`}
           >
-            <span className="flex h-[78%] w-[78%] items-center justify-center rounded-2xl bg-white/45 leading-none shadow-inner">
-              <span className="translate-y-[0.06em]">{tile + 1}</span>
-            </span>
+            {!imageUrl && (
+              <span className="flex h-[78%] w-[78%] items-center justify-center rounded-2xl bg-white/45 leading-none shadow-inner">
+                <span className="translate-y-[0.06em]">{tile + 1}</span>
+              </span>
+            )}
           </button>
         )
       })}

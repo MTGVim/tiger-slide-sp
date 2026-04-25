@@ -1,12 +1,14 @@
+import imageCompression from 'browser-image-compression'
 import confetti from 'canvas-confetti'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controls, SoundMuteButton } from './components/Controls'
 import { PuzzleBoard } from './components/PuzzleBoard'
 import { PwaUpdatePrompt } from './components/PwaUpdatePrompt'
 import { RecordsPanel } from './components/RecordsPanel'
+import { getImageSource } from './utils/imageSources'
 import { createShuffledTiles, getKeyboardMoveIndex, isSolved, moveTile } from './utils/puzzle'
 import { readRecords, saveBestRecord } from './utils/records'
-import { readSoundMuted, writeSoundMuted } from './utils/settings'
+import { readImageModeSettings, readSoundMuted, writeImageModeSettings, writeSoundMuted } from './utils/settings'
 import { playClearSound, playSlideLandSound, playSlideSound } from './utils/sound'
 import { formatSeconds } from './utils/time'
 
@@ -25,6 +27,8 @@ const KEY_DIRECTIONS = {
   arrowright: 'right',
   d: 'right',
 }
+const COMPRESSED_IMAGE_MAX_EDGE_PX = 900
+const COMPRESSED_IMAGE_MAX_SIZE_MB = 0.35
 
 function getBoardConfettiOrigins(boardElement) {
   if (!boardElement) {
@@ -83,6 +87,59 @@ function createGame(size) {
   }
 }
 
+async function cropImageFileToSquare(imageFile) {
+  const sourceObjectUrl = URL.createObjectURL(imageFile)
+
+  try {
+    const image = await new Promise((resolve, reject) => {
+      const nextImage = new Image()
+      nextImage.onload = () => resolve(nextImage)
+      nextImage.onerror = () => reject(new Error('이미지를 불러오지 못했어요.'))
+      nextImage.src = sourceObjectUrl
+    })
+    const cropSize = Math.min(image.naturalWidth, image.naturalHeight)
+    const cropX = Math.floor((image.naturalWidth - cropSize) / 2)
+    const cropY = Math.floor((image.naturalHeight - cropSize) / 2)
+    const canvas = document.createElement('canvas')
+    canvas.width = cropSize
+    canvas.height = cropSize
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('이미지를 처리하지 못했어요.')
+
+    context.drawImage(image, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize)
+
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((nextBlob) => {
+        if (nextBlob) {
+          resolve(nextBlob)
+        } else {
+          reject(new Error('이미지를 처리하지 못했어요.'))
+        }
+      }, 'image/jpeg', 0.9)
+    })
+
+    return new File([blob], 'puzzle-source-image.jpg', { type: 'image/jpeg' })
+  } finally {
+    URL.revokeObjectURL(sourceObjectUrl)
+  }
+}
+
+async function createCompressedImageUrl(source) {
+  const response = await fetch(await source.fetchImage(), { cache: 'no-store' })
+  if (!response.ok) throw new Error('이미지를 불러오지 못했어요.')
+
+  const blob = await response.blob()
+  const imageFile = new File([blob], 'puzzle-source-image', { type: blob.type || 'image/jpeg' })
+  const squareImageFile = await cropImageFileToSquare(imageFile)
+  const compressedFile = await imageCompression(squareImageFile, {
+    maxSizeMB: COMPRESSED_IMAGE_MAX_SIZE_MB,
+    maxWidthOrHeight: COMPRESSED_IMAGE_MAX_EDGE_PX,
+    useWebWorker: false,
+  })
+
+  return URL.createObjectURL(compressedFile)
+}
+
 function App() {
   const [size, setSize] = useState(DEFAULT_SIZE)
   const [game, setGame] = useState(() => createGame(DEFAULT_SIZE))
@@ -92,12 +149,19 @@ function App() {
   const [movingTile, setMovingTile] = useState(null)
   const [shakeDirection, setShakeDirection] = useState(null)
   const [soundMuted, setSoundMuted] = useState(() => readSoundMuted())
+  const [imageModeSettings, setImageModeSettings] = useState(() => readImageModeSettings())
+  const [imageUrl, setImageUrl] = useState(null)
+  const [imageLoading, setImageLoading] = useState(false)
+  const [imageError, setImageError] = useState('')
   const appScrollRef = useRef(null)
   const boardRef = useRef(null)
   const moveUnlockTimerRef = useRef(null)
   const shakeTimerRef = useRef(null)
   const landSoundTimerRef = useRef(null)
   const clearSoundTimerRef = useRef(null)
+  const imageRequestIdRef = useRef(0)
+  const imageObjectUrlRef = useRef(null)
+  const mountedRef = useRef(true)
 
   const solved = useMemo(() => isSolved(game.tiles), [game.tiles])
   const completed = solved && game.moves > 0
@@ -112,6 +176,66 @@ function App() {
     }
   }, [soundMuted])
 
+  const replaceImageUrl = useCallback((nextImageUrl) => {
+    if (imageObjectUrlRef.current) {
+      URL.revokeObjectURL(imageObjectUrlRef.current)
+    }
+
+    imageObjectUrlRef.current = nextImageUrl
+    setImageUrl(nextImageUrl)
+  }, [])
+
+  const loadRandomImage = useCallback(async (settings) => {
+    imageRequestIdRef.current += 1
+    const requestId = imageRequestIdRef.current
+
+    if (!settings.enabled) {
+      replaceImageUrl(null)
+      setImageLoading(false)
+      setImageError('')
+      return
+    }
+
+    if (navigator.onLine === false) {
+      replaceImageUrl(null)
+      setImageLoading(false)
+      setImageError('온라인에서만 이미지 모드를 사용할 수 있어요.')
+      return
+    }
+
+    replaceImageUrl(null)
+    setImageLoading(true)
+    setImageError('')
+
+    try {
+      const compressedImageUrl = await createCompressedImageUrl(getImageSource(settings.sourceId))
+
+      if (!mountedRef.current || imageRequestIdRef.current !== requestId) {
+        URL.revokeObjectURL(compressedImageUrl)
+        return
+      }
+
+      replaceImageUrl(compressedImageUrl)
+    } catch {
+      if (!mountedRef.current || imageRequestIdRef.current !== requestId) return
+      replaceImageUrl(null)
+      setImageError('이미지를 불러오지 못해서 숫자 퍼즐로 표시해요.')
+    } finally {
+      if (mountedRef.current && imageRequestIdRef.current === requestId) {
+        setImageLoading(false)
+      }
+    }
+  }, [replaceImageUrl])
+
+  useEffect(() => {
+    const normalizedSettings = writeImageModeSettings(imageModeSettings)
+    const timerId = window.setTimeout(() => {
+      loadRandomImage(normalizedSettings)
+    }, 0)
+
+    return () => window.clearTimeout(timerId)
+  }, [imageModeSettings, loadRandomImage])
+
   useEffect(() => {
     if (completed) return undefined
 
@@ -123,6 +247,7 @@ function App() {
   }, [completed])
 
   useEffect(() => {
+    mountedRef.current = true
     const appScrollElement = appScrollRef.current
     if (!appScrollElement) return undefined
 
@@ -153,12 +278,18 @@ function App() {
     appScrollElement.addEventListener('touchmove', keepTouchWithinAppScroll, { passive: false })
 
     return () => {
+      mountedRef.current = false
+      imageRequestIdRef.current += 1
       appScrollElement.removeEventListener('touchstart', captureTouchStart)
       appScrollElement.removeEventListener('touchmove', keepTouchWithinAppScroll)
       window.clearTimeout(moveUnlockTimerRef.current)
       window.clearTimeout(shakeTimerRef.current)
       window.clearTimeout(landSoundTimerRef.current)
       window.clearTimeout(clearSoundTimerRef.current)
+      if (imageObjectUrlRef.current) {
+        URL.revokeObjectURL(imageObjectUrlRef.current)
+        imageObjectUrlRef.current = null
+      }
     }
   }, [])
 
@@ -171,7 +302,8 @@ function App() {
     setSize(nextSize)
     setGame(createGame(nextSize))
     setNow(Date.now())
-  }, [size])
+    loadRandomImage(imageModeSettings)
+  }, [imageModeSettings, loadRandomImage, size])
 
   const resetPuzzle = useCallback(() => {
     window.clearTimeout(moveUnlockTimerRef.current)
@@ -191,6 +323,14 @@ function App() {
     setNow(startedAt)
   }, [])
 
+  const handleImageModeEnabledChange = useCallback((enabled) => {
+    setImageModeSettings((current) => ({ ...current, enabled }))
+  }, [])
+
+  const handleImageSourceChange = useCallback((sourceId) => {
+    setImageModeSettings((current) => ({ ...current, sourceId }))
+  }, [])
+
   const shakeBoard = useCallback((direction) => {
     setShakeDirection(null)
     window.clearTimeout(shakeTimerRef.current)
@@ -204,7 +344,7 @@ function App() {
   }, [])
 
   const handleTileClick = useCallback((tileIndex) => {
-    if (completed || isMoving) return
+    if (completed || isMoving || imageLoading) return
 
     const result = moveTile(game.tiles, tileIndex, size)
     if (!result.moved) return
@@ -247,7 +387,7 @@ function App() {
       moves: nextMoves,
       completedAt,
     })
-  }, [completed, game, isMoving, size, soundMuted])
+  }, [completed, game, imageLoading, isMoving, size, soundMuted])
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -263,7 +403,7 @@ function App() {
       if (isTyping || !MOVE_KEYS.has(normalizedKey)) return
 
       event.preventDefault()
-      if (completed || isMoving) return
+      if (completed || isMoving || imageLoading) return
 
       const tileIndex = getKeyboardMoveIndex(game.tiles, size, event.key)
       if (tileIndex === -1) {
@@ -276,7 +416,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [completed, game.tiles, handleTileClick, isMoving, shakeBoard, size])
+  }, [completed, game.tiles, handleTileClick, imageLoading, isMoving, shakeBoard, size])
 
   return (
     <main ref={appScrollRef} className="fixed inset-0 overflow-y-auto overscroll-none bg-[radial-gradient(circle_at_top_left,#fde68a,transparent_32%),radial-gradient(circle_at_top_right,#fbcfe8,transparent_30%),radial-gradient(circle_at_bottom_right,#bfdbfe,transparent_34%),linear-gradient(135deg,#fff7ed,#fdf2f8_45%,#eef2ff)] px-2 py-3 text-violet-950 min-[360px]:px-3 sm:px-6 sm:py-8 lg:px-8">
@@ -294,20 +434,38 @@ function App() {
             size={size}
             moves={game.moves}
             elapsedTime={formatSeconds(elapsedSeconds)}
+            imageModeEnabled={imageModeSettings.enabled}
+            imageSourceId={imageModeSettings.sourceId}
+            imageLoading={imageLoading}
+            onImageModeEnabledChange={handleImageModeEnabledChange}
+            onImageSourceChange={handleImageSourceChange}
             onSizeChange={startNewGame}
             onShuffle={() => startNewGame(size)}
             onReset={resetPuzzle}
           />
+          {imageError && (
+            <p className="text-xs font-extrabold text-rose-700 sm:text-sm">{imageError}</p>
+          )}
         </header>
 
         <div className="flex flex-col items-start gap-3 sm:gap-4 lg:flex-row lg:justify-center lg:gap-6">
           <div className="relative w-full lg:max-w-[720px] lg:flex-1">
+            <div ref={boardRef}>
+              <PuzzleBoard
+                tiles={game.tiles}
+                size={size}
+                onTileClick={handleTileClick}
+                disabled={completed || isMoving || imageLoading}
+                movingTile={movingTile}
+                shakeDirection={shakeDirection}
+                imageUrl={imageUrl}
+                imageLoading={imageLoading}
+                completed={completed}
+              />
+            </div>
             {completed && (
-              <div className="absolute left-1/2 top-0 z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-2xl border-2 border-white/90 bg-white px-3 py-2 text-center text-sm font-black text-violet-950 shadow-2xl shadow-violet-950/30 sm:rounded-3xl sm:border-4 sm:px-5 sm:py-3 sm:text-xl">
-                <div>
-                  <p>축하해요!</p>
-                  <p className="mt-0.5 text-xs text-violet-600 sm:text-sm">완성!</p>
-                </div>
+              <div className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-white/90 bg-white/85 px-3 py-2 text-center text-sm font-black text-violet-950 shadow-xl shadow-violet-200/50 sm:mt-4 sm:rounded-3xl sm:border-4 sm:px-5 sm:py-3 sm:text-xl">
+                <p>완성!</p>
                 <button
                   type="button"
                   className="rounded-xl border-2 border-white/80 bg-rose-200 px-3 py-1.5 text-xs font-extrabold text-rose-950 shadow-sm transition duration-150 ease-out hover:-translate-y-0.5 hover:bg-rose-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-rose-200 sm:px-4 sm:py-2 sm:text-sm"
@@ -317,16 +475,6 @@ function App() {
                 </button>
               </div>
             )}
-            <div ref={boardRef}>
-              <PuzzleBoard
-                tiles={game.tiles}
-                size={size}
-                onTileClick={handleTileClick}
-                disabled={completed || isMoving}
-                movingTile={movingTile}
-                shakeDirection={shakeDirection}
-              />
-            </div>
           </div>
 
           <aside className="w-full lg:w-64 lg:shrink-0">
