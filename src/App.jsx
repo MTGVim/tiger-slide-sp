@@ -197,10 +197,18 @@ function App() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#fde68a,transparent_32%),radial-gradient(circle_at_top_right,#fbcfe8,transparent_30%),radial-gradient(circle_at_bottom_right,#bfdbfe,transparent_34%),linear-gradient(135deg,#fff7ed,#fdf2f8_45%,#eef2ff)] px-4 py-8 text-violet-950 sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <section className="grid gap-6">
-          <header className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-5 text-center shadow-2xl shadow-violet-200/50 backdrop-blur sm:p-6">
-            <h1 className="text-4xl font-black tracking-tight text-violet-950 sm:text-6xl">
+          <header className="grid gap-3 rounded-[2rem] border-4 border-white/80 bg-white/70 p-4 text-center shadow-2xl shadow-violet-200/50 backdrop-blur sm:p-5">
+            <h1 className="text-3xl font-black tracking-tight text-violet-950 sm:text-5xl">
               Tiger-Slide 🐯
             </h1>
+            <Controls
+              size={size}
+              moves={game.moves}
+              elapsedTime={formatSeconds(elapsedSeconds)}
+              onSizeChange={startNewGame}
+              onShuffle={() => startNewGame(size)}
+              onReset={resetPuzzle}
+            />
           </header>
 
           <div className="mx-auto w-full max-w-[640px]">
@@ -214,27 +222,10 @@ function App() {
             />
           </div>
 
-          <Controls
-            size={size}
-            moves={game.moves}
-            elapsedTime={formatSeconds(elapsedSeconds)}
-            solved={completed}
-            onSizeChange={startNewGame}
-            onShuffle={() => startNewGame(size)}
-            onReset={resetPuzzle}
-          />
         </section>
 
         <aside className="grid content-start gap-4 sm:grid-cols-2 lg:grid-cols-1">
           <RecordsPanel records={records} />
-          {completed ? (
-            <div className="rounded-[2rem] border-4 border-white bg-emerald-200 p-5 text-center shadow-xl shadow-emerald-200/60 sm:col-span-2 lg:col-span-1">
-              <p className="text-2xl font-black text-emerald-950">완성!</p>
-              <p className="mt-1 text-sm font-bold text-emerald-900">
-                {game.moves}회 이동 · {formatSeconds(elapsedSeconds)}
-              </p>
-            </div>
-          ) : null}
         </aside>
       </div>
     </main>

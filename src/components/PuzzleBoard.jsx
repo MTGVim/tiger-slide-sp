@@ -21,7 +21,7 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
   return (
     <div
       tabIndex={0}
-      className={`relative aspect-square w-full overflow-hidden rounded-[2rem] border-[10px] border-white bg-violet-100 shadow-2xl shadow-violet-200/60 ${
+      className={`relative aspect-square w-full overflow-hidden rounded-[2rem] border-[10px] border-white bg-violet-100 shadow-2xl shadow-violet-200/60 outline-none focus:outline-none ${
         shakeDirection ? `board-shake-${shakeDirection}` : ''
       }`}
       aria-label={`${size} 곱하기 ${size} 슬라이딩 퍼즐판. 방향키 또는 WASD로 빈칸을 움직일 수 있습니다.`}
