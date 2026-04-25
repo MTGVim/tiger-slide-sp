@@ -203,6 +203,15 @@ function App() {
             </h1>
           </header>
 
+          <PuzzleBoard
+            tiles={game.tiles}
+            size={size}
+            onTileClick={handleTileClick}
+            disabled={completed || isMoving}
+            movingTile={movingTile}
+            shakeDirection={shakeDirection}
+          />
+
           <Controls
             size={size}
             moves={game.moves}
@@ -212,29 +221,10 @@ function App() {
             onShuffle={() => startNewGame(size)}
             onReset={resetPuzzle}
           />
-
-          <PuzzleBoard
-            tiles={game.tiles}
-            size={size}
-            onTileClick={handleTileClick}
-            disabled={completed || isMoving}
-            movingTile={movingTile}
-            shakeDirection={shakeDirection}
-          />
         </section>
 
         <aside className="grid content-start gap-4 sm:grid-cols-2 lg:grid-cols-1">
           <RecordsPanel records={records} />
-          <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-1 lg:grid-cols-1">
-            <div className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-4 text-center shadow-xl shadow-violet-200/40 backdrop-blur sm:p-5">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-600 sm:text-sm">이동 횟수</p>
-              <p className="mt-1 text-4xl font-black sm:mt-2 sm:text-5xl">{game.moves}</p>
-            </div>
-            <div className="rounded-[2rem] border-4 border-white/80 bg-white/70 p-4 text-center shadow-xl shadow-violet-200/40 backdrop-blur sm:p-5">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-600 sm:text-sm">시간</p>
-              <p className="mt-1 text-4xl font-black sm:mt-2 sm:text-5xl">{formatSeconds(elapsedSeconds)}</p>
-            </div>
-          </div>
           {completed ? (
             <div className="rounded-[2rem] border-4 border-white bg-emerald-200 p-5 text-center shadow-xl shadow-emerald-200/60 sm:col-span-2 lg:col-span-1">
               <p className="text-2xl font-black text-emerald-950">완성!</p>
