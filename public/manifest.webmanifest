@@ -1,0 +1,23 @@
+{
+  "name": "Tiger-Slide",
+  "short_name": "Tiger Slide",
+  "description": "오프라인에서도 플레이 가능한 슬라이딩 퍼즐 게임",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "theme_color": "#4c1d95",
+  "background_color": "#fff7ed",
+  "icons": [
+    {
+      "src": "pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

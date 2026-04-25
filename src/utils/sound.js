@@ -1,4 +1,21 @@
 let audioContext
+let slideAudio
+
+function getAssetUrl(path) {
+  return `${import.meta.env.BASE_URL}${path}`
+}
+
+function getSlideAudio() {
+  if (typeof window === 'undefined') return null
+
+  if (!slideAudio) {
+    slideAudio = new Audio(getAssetUrl('sounds/slide-smooth.wav'))
+    slideAudio.preload = 'auto'
+    slideAudio.volume = 0.32
+  }
+
+  return slideAudio
+}
 
 function getAudioContext() {
   if (typeof window === 'undefined') return null
@@ -27,36 +44,11 @@ function createGain(context, startTime, peakVolume, endTime) {
 }
 
 export function playSlideSound() {
-  const context = getAudioContext()
-  if (!context) return
+  const audio = getSlideAudio()
+  if (!audio) return
 
-  const startTime = context.currentTime
-  const duration = 0.13
-  const bufferSize = Math.floor(context.sampleRate * duration)
-  const buffer = context.createBuffer(1, bufferSize, context.sampleRate)
-  const data = buffer.getChannelData(0)
-
-  for (let index = 0; index < bufferSize; index += 1) {
-    const progress = index / bufferSize
-    const grit = Math.random() * 2 - 1
-    data[index] = grit * (1 - progress) * 0.45
-  }
-
-  const noise = context.createBufferSource()
-  noise.buffer = buffer
-
-  const filter = context.createBiquadFilter()
-  filter.type = 'bandpass'
-  filter.frequency.setValueAtTime(520, startTime)
-  filter.frequency.exponentialRampToValueAtTime(190, startTime + duration)
-  filter.Q.setValueAtTime(5.5, startTime)
-
-  const gain = createGain(context, startTime, 0.11, startTime + duration)
-
-  noise.connect(filter)
-  filter.connect(gain)
-  noise.start(startTime)
-  noise.stop(startTime + duration)
+  audio.currentTime = 0
+  audio.play().catch(() => {})
 }
 
 function playTone(context, startTime, frequency, duration, volume) {

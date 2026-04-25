@@ -16,12 +16,12 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
   const emptyIndex = tiles.indexOf(emptyTile)
   const tileSize = 100 / size
   const tilePositions = new Map(tiles.map((tile, index) => [tile, index]))
-  const numberFontSize = `clamp(2.5rem, ${18 / size}vw, ${7 / size}rem)`
+  const numberFontSize = `clamp(1.45rem, ${22 / size}vw, ${10 / size}rem)`
 
   return (
     <div
       tabIndex={0}
-      className={`relative aspect-square w-full overflow-hidden rounded-[2rem] border-[10px] border-white bg-violet-100 shadow-2xl shadow-violet-200/60 outline-none focus:outline-none ${
+      className={`relative aspect-square w-full overflow-hidden rounded-2xl border-[5px] border-white bg-violet-100 shadow-2xl shadow-violet-200/60 outline-none focus:outline-none sm:rounded-[2rem] sm:border-[10px] ${
         shakeDirection ? `board-shake-${shakeDirection}` : ''
       }`}
       aria-label={`${size} 곱하기 ${size} 슬라이딩 퍼즐판. 방향키 또는 WASD로 빈칸을 움직일 수 있습니다.`}
@@ -32,7 +32,7 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
       }}
     >
       <div
-        className="absolute rounded-3xl border-4 border-dashed border-violet-200/90 bg-white/35"
+        className="absolute rounded-xl border-2 border-dashed border-violet-200/90 bg-white/35 sm:rounded-3xl sm:border-4"
         aria-hidden="true"
         style={{
           width: `${tileSize}%`,
@@ -54,7 +54,7 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
           <button
             key={tile}
             type="button"
-            className={`absolute grid place-items-center rounded-3xl border-4 border-white bg-gradient-to-br ${colorClass} font-black text-violet-950 shadow-lg transition-[transform,box-shadow,filter] duration-150 ease-out focus:z-10 focus:outline-none focus:ring-4 focus:ring-violet-300 ${
+            className={`absolute grid place-items-center rounded-xl border-2 border-white bg-gradient-to-br ${colorClass} font-black text-violet-950 shadow-lg transition-[transform,box-shadow,filter] duration-150 ease-out focus:z-10 focus:outline-none focus:ring-4 focus:ring-violet-300 sm:rounded-3xl sm:border-4 ${
               canMove ? 'cursor-pointer hover:brightness-105 hover:drop-shadow-xl' : 'cursor-default'
             }`}
             style={{
@@ -70,8 +70,8 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
             onClick={() => onTileClick(index)}
             aria-label={`블록 ${tile + 1}${canMove ? ', 이동 가능' : ''}`}
           >
-            <span className="grid h-[78%] w-[78%] place-items-center rounded-2xl bg-white/45 leading-none shadow-inner">
-              {tile + 1}
+            <span className="flex h-[78%] w-[78%] items-center justify-center rounded-2xl bg-white/45 leading-none shadow-inner">
+              <span className="translate-y-[0.06em]">{tile + 1}</span>
             </span>
           </button>
         )
