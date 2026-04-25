@@ -1,15 +1,30 @@
 import { isAdjacent } from '../utils/puzzle'
 
-export function PuzzleBoard({ tiles, size, imageUrl, onTileClick }) {
+const BLOCK_COLORS = [
+  'bg-rose-200 text-rose-900 shadow-rose-200/60',
+  'bg-orange-200 text-orange-900 shadow-orange-200/60',
+  'bg-amber-200 text-amber-900 shadow-amber-200/60',
+  'bg-yellow-200 text-yellow-900 shadow-yellow-200/60',
+  'bg-lime-200 text-lime-900 shadow-lime-200/60',
+  'bg-emerald-200 text-emerald-900 shadow-emerald-200/60',
+  'bg-cyan-200 text-cyan-900 shadow-cyan-200/60',
+  'bg-sky-200 text-sky-900 shadow-sky-200/60',
+  'bg-indigo-200 text-indigo-900 shadow-indigo-200/60',
+  'bg-violet-200 text-violet-900 shadow-violet-200/60',
+  'bg-fuchsia-200 text-fuchsia-900 shadow-fuchsia-200/60',
+  'bg-pink-200 text-pink-900 shadow-pink-200/60',
+]
+
+export function PuzzleBoard({ tiles, size, onTileClick }) {
   const emptyTile = size * size - 1
   const emptyIndex = tiles.indexOf(emptyTile)
   const tileSize = 100 / size
 
   return (
-    <div className="rounded-[2rem] bg-slate-900 p-3 shadow-2xl shadow-slate-300/70">
-      <div className="relative aspect-square w-full overflow-hidden rounded-[1.5rem] bg-slate-800">
+    <div className="rounded-[2rem] bg-white/70 p-3 shadow-2xl shadow-slate-300/70 ring-1 ring-white/80 backdrop-blur">
+      <div className="relative aspect-square w-full overflow-hidden rounded-[1.5rem] bg-white/80">
         <div
-          className="absolute bg-slate-950/90"
+          className="absolute rounded-2xl bg-slate-200/70 ring-2 ring-inset ring-white/80"
           style={{
             width: `${tileSize}%`,
             height: `${tileSize}%`,
@@ -21,40 +36,32 @@ export function PuzzleBoard({ tiles, size, imageUrl, onTileClick }) {
         {tiles.map((tileId, index) => {
           if (tileId === emptyTile) return null
 
-          const correctRow = Math.floor(tileId / size)
-          const correctCol = tileId % size
           const currentRow = Math.floor(index / size)
           const currentCol = index % size
-          const x = size === 1 ? 0 : (correctCol / (size - 1)) * 100
-          const y = size === 1 ? 0 : (correctRow / (size - 1)) * 100
           const canMove = isAdjacent(index, emptyIndex, size)
+          const colorClass = BLOCK_COLORS[tileId % BLOCK_COLORS.length]
 
           return (
             <button
               key={tileId}
               type="button"
-              className={`absolute border border-slate-900/30 transition-all duration-150 ease-out ${
+              className={`absolute rounded-2xl border-4 border-white/80 shadow-lg transition-all duration-150 ease-out ${colorClass} ${
                 canMove
-                  ? 'cursor-pointer hover:z-10 hover:scale-[1.03] hover:ring-4 hover:ring-indigo-300'
+                  ? 'cursor-pointer hover:z-10 hover:scale-[1.04] hover:ring-4 hover:ring-white/90'
                   : 'cursor-default'
               }`}
               style={{
                 width: `${tileSize}%`,
                 height: `${tileSize}%`,
                 transform: `translate(${currentCol * 100}%, ${currentRow * 100}%)`,
-                backgroundImage: imageUrl ? `url(${imageUrl})` : undefined,
-                backgroundSize: imageUrl ? `${size * 100}% ${size * 100}%` : undefined,
-                backgroundPosition: imageUrl ? `${x}% ${y}%` : undefined,
               }}
               disabled={!canMove}
               onClick={() => onTileClick(index)}
               aria-label={`${tileId + 1}번 타일`}
             >
-              {!imageUrl ? (
-                <span className="flex h-full w-full items-center justify-center text-2xl font-black text-white">
-                  {tileId + 1}
-                </span>
-              ) : null}
+              <span className="flex h-full w-full items-center justify-center text-4xl font-black drop-shadow-sm sm:text-5xl">
+                {tileId + 1}
+              </span>
             </button>
           )
         })}
