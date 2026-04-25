@@ -1,11 +1,12 @@
 import confetti from 'canvas-confetti'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Controls } from './components/Controls'
+import { Controls, SoundMuteButton } from './components/Controls'
 import { PuzzleBoard } from './components/PuzzleBoard'
 import { PwaUpdatePrompt } from './components/PwaUpdatePrompt'
 import { RecordsPanel } from './components/RecordsPanel'
 import { createShuffledTiles, getKeyboardMoveIndex, isSolved, moveTile } from './utils/puzzle'
 import { readRecords, saveBestRecord } from './utils/records'
+import { readSoundMuted, writeSoundMuted } from './utils/settings'
 import { playClearSound, playSlideLandSound, playSlideSound } from './utils/sound'
 import { formatSeconds } from './utils/time'
 
@@ -90,7 +91,7 @@ function App() {
   const [isMoving, setIsMoving] = useState(false)
   const [movingTile, setMovingTile] = useState(null)
   const [shakeDirection, setShakeDirection] = useState(null)
-  const [soundMuted, setSoundMuted] = useState(false)
+  const [soundMuted, setSoundMuted] = useState(() => readSoundMuted())
   const appScrollRef = useRef(null)
   const boardRef = useRef(null)
   const moveUnlockTimerRef = useRef(null)
@@ -103,6 +104,8 @@ function App() {
   const elapsedSeconds = Math.max(0, Math.floor(((game.completedAt ?? now) - game.startedAt) / 1000))
 
   useEffect(() => {
+    writeSoundMuted(soundMuted)
+
     if (soundMuted) {
       window.clearTimeout(landSoundTimerRef.current)
       window.clearTimeout(clearSoundTimerRef.current)
@@ -279,7 +282,11 @@ function App() {
     <main ref={appScrollRef} className="fixed inset-0 overflow-y-auto overscroll-none bg-[radial-gradient(circle_at_top_left,#fde68a,transparent_32%),radial-gradient(circle_at_top_right,#fbcfe8,transparent_30%),radial-gradient(circle_at_bottom_right,#bfdbfe,transparent_34%),linear-gradient(135deg,#fff7ed,#fdf2f8_45%,#eef2ff)] px-2 py-3 text-violet-950 min-[360px]:px-3 sm:px-6 sm:py-8 lg:px-8">
       <PwaUpdatePrompt />
       <div className="mx-auto flex w-full max-w-[600px] min-w-0 flex-col gap-2.5 sm:gap-4 lg:max-w-5xl lg:gap-6">
-        <header className="grid gap-1.5 rounded-[1.25rem] border-2 border-white/80 bg-white/70 p-2 text-center shadow-2xl shadow-violet-200/50 backdrop-blur sm:gap-3 sm:rounded-[2rem] sm:border-4 sm:p-4 lg:p-5">
+        <header className="relative grid gap-1.5 rounded-[1.25rem] border-2 border-white/80 bg-white/70 p-2 pt-11 text-center shadow-2xl shadow-violet-200/50 backdrop-blur sm:gap-3 sm:rounded-[2rem] sm:border-4 sm:p-4 lg:p-5">
+          <SoundMuteButton
+            soundMuted={soundMuted}
+            onSoundMutedChange={setSoundMuted}
+          />
           <h1 className="hidden font-['Bagel_Fat_One'] text-4xl font-black tracking-wide text-violet-950 drop-shadow-[0_3px_0_rgba(255,255,255,0.95)] sm:block sm:text-6xl">
             Tiger-Slide 🐯
           </h1>
@@ -290,8 +297,6 @@ function App() {
             onSizeChange={startNewGame}
             onShuffle={() => startNewGame(size)}
             onReset={resetPuzzle}
-            soundMuted={soundMuted}
-            onSoundMutedChange={setSoundMuted}
           />
         </header>
 
