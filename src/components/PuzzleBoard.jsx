@@ -16,6 +16,7 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
   const emptyIndex = tiles.indexOf(emptyTile)
   const tileSize = 100 / size
   const tilePositions = new Map(tiles.map((tile, index) => [tile, index]))
+  const numberFontSize = `clamp(2.5rem, ${18 / size}vw, ${7 / size}rem)`
 
   return (
     <div
@@ -53,7 +54,7 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
           <button
             key={tile}
             type="button"
-            className={`absolute grid place-items-center rounded-3xl border-4 border-white bg-gradient-to-br ${colorClass} text-5xl font-black text-violet-950 shadow-lg transition-[transform,box-shadow,filter] duration-150 ease-out focus:z-10 focus:outline-none focus:ring-4 focus:ring-violet-300 sm:text-6xl ${
+            className={`absolute grid place-items-center rounded-3xl border-4 border-white bg-gradient-to-br ${colorClass} font-black text-violet-950 shadow-lg transition-[transform,box-shadow,filter] duration-150 ease-out focus:z-10 focus:outline-none focus:ring-4 focus:ring-violet-300 ${
               canMove ? 'cursor-pointer hover:brightness-105 hover:drop-shadow-xl' : 'cursor-default'
             }`}
             style={{
@@ -63,6 +64,7 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
               transition: 'transform 150ms ease, box-shadow 150ms ease, filter 150ms ease',
               willChange: 'transform',
               zIndex: movingTile === tile ? 2 : 1,
+              fontSize: numberFontSize,
             }}
             disabled={disabled || !canMove}
             onClick={() => onTileClick(index)}
