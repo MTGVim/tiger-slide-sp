@@ -6,7 +6,7 @@ import { PuzzleBoard } from './components/PuzzleBoard'
 import { PwaUpdatePrompt } from './components/PwaUpdatePrompt'
 import { RecordsPanel } from './components/RecordsPanel'
 import { getImageSource } from './utils/imageSources'
-import { createShuffledTiles, getKeyboardMoveIndex, isSolved, moveTile } from './utils/puzzle'
+import { createShuffledTiles, getKeyboardMoveIndex, getRandomEmptyTile, isSolved, moveTile } from './utils/puzzle'
 import { readRecords, saveBestRecord } from './utils/records'
 import { readImageModeSettings, readSoundMuted, writeImageModeSettings, writeSoundMuted } from './utils/settings'
 import { playClearSound, playSlideLandSound, playSlideSound } from './utils/sound'
@@ -75,12 +75,14 @@ function launchClearConfetti(boardElement) {
 }
 
 function createGame(size) {
-  const tiles = createShuffledTiles(size)
+  const emptyTile = getRandomEmptyTile(size)
+  const tiles = createShuffledTiles(size, { emptyTile })
   const now = Date.now()
 
   return {
     tiles,
     initialTiles: tiles,
+    emptyTile,
     moves: 0,
     startedAt: now,
     completedAt: null,
@@ -352,7 +354,7 @@ function App() {
   const handleTileClick = useCallback((tileIndex) => {
     if (completed || isMoving || imageLoading) return
 
-    const result = moveTile(game.tiles, tileIndex, size)
+    const result = moveTile(game.tiles, tileIndex, size, game.emptyTile)
     if (!result.moved) return
 
     if (!soundMuted) {
@@ -411,7 +413,7 @@ function App() {
       event.preventDefault()
       if (completed || isMoving || imageLoading) return
 
-      const tileIndex = getKeyboardMoveIndex(game.tiles, size, event.key)
+      const tileIndex = getKeyboardMoveIndex(game.tiles, size, event.key, game.emptyTile)
       if (tileIndex === -1) {
         shakeBoard(KEY_DIRECTIONS[normalizedKey])
         return
@@ -422,7 +424,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [completed, game.tiles, handleTileClick, imageLoading, isMoving, shakeBoard, size])
+  }, [completed, game.emptyTile, game.tiles, handleTileClick, imageLoading, isMoving, shakeBoard, size])
 
   return (
     <main ref={appScrollRef} className="fixed inset-0 overflow-y-auto overscroll-none bg-[radial-gradient(circle_at_top_left,#fde68a,transparent_32%),radial-gradient(circle_at_top_right,#fbcfe8,transparent_30%),radial-gradient(circle_at_bottom_right,#bfdbfe,transparent_34%),linear-gradient(135deg,#fff7ed,#fdf2f8_45%,#eef2ff)] px-2 py-3 text-violet-950 min-[360px]:px-3 sm:px-6 sm:py-8 lg:px-8">
@@ -460,6 +462,7 @@ function App() {
               <PuzzleBoard
                 tiles={game.tiles}
                 size={size}
+                emptyTile={game.emptyTile}
                 onTileClick={handleTileClick}
                 disabled={completed || isMoving || imageLoading}
                 movingTile={movingTile}

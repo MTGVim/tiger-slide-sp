@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { createSolvedTiles, getEmptyTile, isAdjacent } from '../utils/puzzle'
+import { createSolvedTiles, isAdjacent } from '../utils/puzzle'
 
 const BLOCK_COLORS = [
   'from-pink-200 to-rose-300',
@@ -29,8 +29,7 @@ function isSwipeTowardEmpty(tileIndex, emptyIndex, size, dx, dy) {
   return (emptyRow < tileRow && dy < 0) || (emptyRow > tileRow && dy > 0)
 }
 
-export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, shakeDirection, imageUrl, imageLoading, completed }) {
-  const emptyTile = getEmptyTile(size)
+export function PuzzleBoard({ tiles, size, emptyTile, onTileClick, disabled, movingTile, shakeDirection, imageUrl, imageLoading, completed }) {
   const emptyIndex = tiles.indexOf(emptyTile)
   const tileSize = 100 / size
   const tilePositions = new Map(tiles.map((tile, index) => [tile, index]))

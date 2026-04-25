@@ -11,6 +11,10 @@ export function getEmptyTile(size) {
   return size * size - 1
 }
 
+export function getRandomEmptyTile(size, rng = Math.random) {
+  return Math.floor(rng() * size * size)
+}
+
 export function getNeighbors(index, size) {
   const row = Math.floor(index / size)
   const col = index % size
@@ -37,8 +41,8 @@ export function isSolved(tiles) {
   return tiles.every((tile, index) => tile === index)
 }
 
-export function moveTile(tiles, tileIndex, size) {
-  const emptyIndex = tiles.indexOf(getEmptyTile(size))
+export function moveTile(tiles, tileIndex, size, emptyTile = getEmptyTile(size)) {
+  const emptyIndex = tiles.indexOf(emptyTile)
 
   if (tileIndex < 0 || tileIndex >= tiles.length || !isAdjacent(tileIndex, emptyIndex, size)) {
     return { tiles, moved: false }
@@ -50,8 +54,8 @@ export function moveTile(tiles, tileIndex, size) {
   return { tiles: nextTiles, moved: true }
 }
 
-export function getKeyboardMoveIndex(tiles, size, key) {
-  const emptyIndex = tiles.indexOf(getEmptyTile(size))
+export function getKeyboardMoveIndex(tiles, size, key, emptyTile = getEmptyTile(size)) {
+  const emptyIndex = tiles.indexOf(emptyTile)
   const emptyRow = Math.floor(emptyIndex / size)
   const emptyCol = emptyIndex % size
   const normalizedKey = key.toLowerCase()
@@ -82,10 +86,10 @@ function pickIndex(rng, length) {
 export function shuffleTiles(
   tiles,
   size,
-  { steps = size * size * 20, rng = Math.random, returnTrace = false } = {},
+  { steps = size * size * 20, rng = Math.random, returnTrace = false, emptyTile = getEmptyTile(size) } = {},
 ) {
   const shuffled = [...tiles]
-  let emptyIndex = shuffled.indexOf(getEmptyTile(size))
+  let emptyIndex = shuffled.indexOf(emptyTile)
   let previousEmpty = -1
   const trace = []
 

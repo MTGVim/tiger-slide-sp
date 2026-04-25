@@ -3,6 +3,7 @@ import {
   createSolvedTiles,
   getKeyboardMoveIndex,
   getNeighbors,
+  getRandomEmptyTile,
   isAdjacent,
   isSolved,
   moveTile,
@@ -12,6 +13,12 @@ import {
 describe('puzzle utilities', () => {
   it('creates a solved tile list', () => {
     expect(createSolvedTiles(3)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8])
+  })
+
+  it('picks a random empty tile ID within the board', () => {
+    expect(getRandomEmptyTile(3, () => 0)).toBe(0)
+    expect(getRandomEmptyTile(3, () => 0.5)).toBe(4)
+    expect(getRandomEmptyTile(3, () => 0.999)).toBe(8)
   })
 
   it('returns correct neighbors for corners, edges, and centers', () => {
@@ -33,6 +40,10 @@ describe('puzzle utilities', () => {
     expect(adjacent.moved).toBe(true)
     expect(adjacent.tiles).toEqual([0, 1, 2, 3, 4, 8, 6, 7, 5])
 
+    const customEmpty = moveTile(solved, 3, 3, 4)
+    expect(customEmpty.moved).toBe(true)
+    expect(customEmpty.tiles).toEqual([0, 1, 2, 4, 3, 5, 6, 7, 8])
+
     const nonAdjacent = moveTile(solved, 0, 3)
     expect(nonAdjacent.moved).toBe(false)
     expect(nonAdjacent.tiles).toBe(solved)
@@ -50,6 +61,11 @@ describe('puzzle utilities', () => {
     expect(getKeyboardMoveIndex(solved, 3, 'ArrowRight')).toBe(7)
     expect(getKeyboardMoveIndex(solved, 3, 'd')).toBe(7)
     expect(getKeyboardMoveIndex(solved, 3, 'Enter')).toBe(-1)
+
+    expect(getKeyboardMoveIndex(solved, 3, 'ArrowUp', 4)).toBe(7)
+    expect(getKeyboardMoveIndex(solved, 3, 'ArrowDown', 4)).toBe(1)
+    expect(getKeyboardMoveIndex(solved, 3, 'ArrowLeft', 4)).toBe(5)
+    expect(getKeyboardMoveIndex(solved, 3, 'ArrowRight', 4)).toBe(3)
   })
 
   it('detects solved boards', () => {
@@ -71,5 +87,18 @@ describe('puzzle utilities', () => {
     expect(isSolved(tiles)).toBe(false)
     expect(trace.length).toBeGreaterThanOrEqual(8)
     expect(trace.every(({ from, to }) => getNeighbors(from, 3).includes(to))).toBe(true)
+  })
+
+  it('shuffles from a custom empty tile while keeping the standard solved order', () => {
+    const { tiles, trace } = shuffleTiles(createSolvedTiles(3), 3, {
+      steps: 2,
+      rng: () => 0,
+      returnTrace: true,
+      emptyTile: 4,
+    })
+
+    expect(trace[0].from).toBe(4)
+    expect([...tiles].sort((a, b) => a - b)).toEqual(createSolvedTiles(3))
+    expect(isSolved(createSolvedTiles(3))).toBe(true)
   })
 })
