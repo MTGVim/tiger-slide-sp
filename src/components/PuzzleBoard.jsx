@@ -53,7 +53,7 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
           <button
             key={tile}
             type="button"
-            className={`absolute grid place-items-center rounded-3xl border-4 border-white bg-gradient-to-br ${colorClass} text-3xl font-black text-violet-950 shadow-lg transition-[transform,box-shadow,filter] duration-150 ease-out focus:z-10 focus:outline-none focus:ring-4 focus:ring-violet-300 sm:text-4xl ${
+            className={`absolute grid place-items-center rounded-3xl border-4 border-white bg-gradient-to-br ${colorClass} text-5xl font-black text-violet-950 shadow-lg transition-[transform,box-shadow,filter] duration-150 ease-out focus:z-10 focus:outline-none focus:ring-4 focus:ring-violet-300 sm:text-6xl ${
               canMove ? 'cursor-pointer hover:brightness-105 hover:drop-shadow-xl' : 'cursor-default'
             }`}
             style={{
@@ -68,7 +68,7 @@ export function PuzzleBoard({ tiles, size, onTileClick, disabled, movingTile, sh
             onClick={() => onTileClick(index)}
             aria-label={`블록 ${tile + 1}${canMove ? ', 이동 가능' : ''}`}
           >
-            <span className="grid h-3/5 w-3/5 place-items-center rounded-2xl bg-white/45 shadow-inner">
+            <span className="grid h-[78%] w-[78%] place-items-center rounded-2xl bg-white/45 leading-none shadow-inner">
               {tile + 1}
             </span>
           </button>
