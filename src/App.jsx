@@ -11,6 +11,8 @@ import { formatSeconds } from './utils/time'
 
 const DEFAULT_SIZE = 3
 const MOVE_ANIMATION_MS = 170
+const SLIDE_LAND_SOUND_DELAY_MS = MOVE_ANIMATION_MS + 70
+const CLEAR_SOUND_DELAY_MS = SLIDE_LAND_SOUND_DELAY_MS + 120
 const MOVE_KEYS = new Set(['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'])
 const KEY_DIRECTIONS = {
   arrowup: 'up',
@@ -207,7 +209,7 @@ function App() {
     if (!soundMuted) {
       playSlideSound()
       window.clearTimeout(landSoundTimerRef.current)
-      landSoundTimerRef.current = window.setTimeout(playSlideLandSound, MOVE_ANIMATION_MS - 20)
+      landSoundTimerRef.current = window.setTimeout(playSlideLandSound, SLIDE_LAND_SOUND_DELAY_MS)
     }
     setMovingTile(game.tiles[tileIndex])
     setIsMoving(true)
@@ -231,7 +233,7 @@ function App() {
       setRecords(nextRecordState.records)
       if (!soundMuted) {
         window.clearTimeout(clearSoundTimerRef.current)
-        clearSoundTimerRef.current = window.setTimeout(playClearSound, MOVE_ANIMATION_MS + 40)
+        clearSoundTimerRef.current = window.setTimeout(playClearSound, CLEAR_SOUND_DELAY_MS)
       }
       launchClearConfetti(boardRef.current)
     }

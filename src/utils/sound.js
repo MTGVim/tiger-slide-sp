@@ -56,8 +56,65 @@ export function playSlideLandSound() {
   if (!context) return
 
   const startTime = context.currentTime
-  playTone(context, startTime, 180, 0.055, 0.09)
-  playTone(context, startTime + 0.01, 280, 0.04, 0.045)
+  playImpactNoise(context, startTime, 0.038, 0.16)
+  playImpactTone(context, startTime + 0.002, 1550, 0.032, 0.042, 'triangle', 4800)
+  playImpactTone(context, startTime + 0.012, 2600, 0.018, 0.018, 'sine', 6800)
+}
+
+function createImpactGain(context, startTime, peakVolume, endTime) {
+  const gain = context.createGain()
+  gain.gain.setValueAtTime(0.0001, startTime)
+  gain.gain.exponentialRampToValueAtTime(peakVolume, startTime + 0.003)
+  gain.gain.exponentialRampToValueAtTime(0.0001, endTime)
+  gain.connect(context.destination)
+  return gain
+}
+
+function playImpactNoise(context, startTime, duration, volume) {
+  const frameCount = Math.max(1, Math.floor(context.sampleRate * duration))
+  const buffer = context.createBuffer(1, frameCount, context.sampleRate)
+  const data = buffer.getChannelData(0)
+
+  for (let index = 0; index < frameCount; index += 1) {
+    const decay = 1 - index / frameCount
+    data[index] = (Math.random() * 2 - 1) * decay * decay
+  }
+
+  const source = context.createBufferSource()
+  source.buffer = buffer
+
+  const bandpass = context.createBiquadFilter()
+  bandpass.type = 'bandpass'
+  bandpass.frequency.setValueAtTime(3600, startTime)
+  bandpass.Q.setValueAtTime(0.75, startTime)
+
+  const lowpass = context.createBiquadFilter()
+  lowpass.type = 'lowpass'
+  lowpass.frequency.setValueAtTime(7600, startTime)
+
+  const gain = createImpactGain(context, startTime, volume, startTime + duration)
+  source.connect(bandpass)
+  bandpass.connect(lowpass)
+  lowpass.connect(gain)
+  source.start(startTime)
+  source.stop(startTime + duration)
+}
+
+function playImpactTone(context, startTime, frequency, duration, volume, type, cutoff) {
+  const oscillator = context.createOscillator()
+  oscillator.type = type
+  oscillator.frequency.setValueAtTime(frequency, startTime)
+  oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.82, startTime + duration)
+
+  const lowpass = context.createBiquadFilter()
+  lowpass.type = 'lowpass'
+  lowpass.frequency.setValueAtTime(cutoff, startTime)
+
+  const gain = createImpactGain(context, startTime, volume, startTime + duration)
+  oscillator.connect(lowpass)
+  lowpass.connect(gain)
+  oscillator.start(startTime)
+  oscillator.stop(startTime + duration)
 }
 
 function playTone(context, startTime, frequency, duration, volume) {
