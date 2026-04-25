@@ -12,7 +12,7 @@ function getSlideAudio() {
   if (!slideAudio) {
     slideAudio = new Audio(getAssetUrl('sounds/slide-smooth.wav'))
     slideAudio.preload = 'auto'
-    slideAudio.volume = 0.32
+    slideAudio.volume = 0.16
   }
 
   return slideAudio
