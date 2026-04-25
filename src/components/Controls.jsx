@@ -5,7 +5,7 @@ export function Controls({ size, moves, elapsedTime, onSizeChange, onShuffle, on
     <section className="rounded-[1.5rem] border-4 border-white/80 bg-white/70 p-3 shadow-xl shadow-violet-200/40 backdrop-blur sm:p-4">
       <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-black sm:text-base">
         <span className="rounded-xl bg-white/60 px-3 py-1.5 text-violet-950">
-          {size}x{size} · 이동 {moves} · 시간 {elapsedTime}
+          이동 {moves} · 시간 {elapsedTime}
         </span>
 
         {DIFFICULTIES.map((difficulty) => (
