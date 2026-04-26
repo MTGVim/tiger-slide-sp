@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { createSolvedTiles, isAdjacent } from '../utils/puzzle'
 
 const BLOCK_COLORS = [
@@ -13,6 +13,7 @@ const BLOCK_COLORS = [
 ]
 
 const SWIPE_THRESHOLD_PX = 24
+const TILE_SCALE = 0.94
 
 function isSwipeTowardEmpty(tileIndex, emptyIndex, size, dx, dy) {
   const tileRow = Math.floor(tileIndex / size)
@@ -27,6 +28,84 @@ function isSwipeTowardEmpty(tileIndex, emptyIndex, size, dx, dy) {
 
   if (emptyCol !== tileCol) return false
   return (emptyRow < tileRow && dy < 0) || (emptyRow > tileRow && dy > 0)
+}
+
+function FloatingThumbnail({ imageUrl }) {
+  const [position, setPosition] = useState(null)
+  const dragRef = useRef(null)
+
+  function getBoundedPosition(left, top, element) {
+    const rect = element.getBoundingClientRect()
+    const maxLeft = Math.max(0, window.innerWidth - rect.width)
+    const maxTop = Math.max(0, window.innerHeight - rect.height)
+
+    return {
+      left: Math.min(maxLeft, Math.max(0, left)),
+      top: Math.min(maxTop, Math.max(0, top)),
+    }
+  }
+
+  function handlePointerDown(event) {
+    if (!event.isPrimary) return
+
+    event.preventDefault()
+    event.stopPropagation()
+    const rect = event.currentTarget.getBoundingClientRect()
+    dragRef.current = {
+      pointerId: event.pointerId,
+      grabX: event.clientX - rect.left,
+      grabY: event.clientY - rect.top,
+    }
+    setPosition({ left: rect.left, top: rect.top })
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+  }
+
+  function handlePointerMove(event) {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+
+    event.preventDefault()
+    event.stopPropagation()
+    setPosition(getBoundedPosition(event.clientX - drag.grabX, event.clientY - drag.grabY, event.currentTarget))
+  }
+
+  function handlePointerUp(event) {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+
+    event.preventDefault()
+    event.stopPropagation()
+    dragRef.current = null
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+  }
+
+  function handlePointerCancel(event) {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+
+    event.stopPropagation()
+    dragRef.current = null
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+  }
+
+  function handleClick(event) {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
+  return (
+    <div
+      className={`z-20 size-16 touch-none select-none overflow-hidden rounded-xl border-2 border-white/90 bg-white shadow-xl shadow-violet-950/25 cursor-grab active:cursor-grabbing sm:size-24 sm:rounded-2xl sm:border-4 ${position ? 'fixed' : 'absolute right-2 top-2 sm:right-4 sm:top-4'}`}
+      style={position ? { left: `${position.left}px`, top: `${position.top}px` } : undefined}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      onClick={handleClick}
+    >
+      <img className="size-full select-none object-cover" src={imageUrl} alt="퍼즐 원본 이미지 미리보기" draggable={false} />
+    </div>
+  )
 }
 
 export function PuzzleBoard({ tiles, size, emptyTile, onTileClick, disabled, movingTile, shakeDirection, imageUrl, imageLoading, completed }) {
@@ -108,11 +187,7 @@ export function PuzzleBoard({ tiles, size, emptyTile, onTileClick, disabled, mov
         backgroundSize: revealImage ? 'cover' : `${tileSize}% ${tileSize}%`,
       }}
     >
-      {showThumbnail && (
-        <div className="pointer-events-none absolute right-2 top-2 z-20 size-16 overflow-hidden rounded-xl border-2 border-white/90 bg-white shadow-xl shadow-violet-950/25 sm:right-4 sm:top-4 sm:size-24 sm:rounded-2xl sm:border-4">
-          <img className="size-full object-cover" src={imageUrl} alt="퍼즐 원본 이미지 미리보기" />
-        </div>
-      )}
+      {showThumbnail && <FloatingThumbnail key={`${imageUrl}-${size}`} imageUrl={imageUrl} />}
 
       {imageLoading && (
         <div className="absolute inset-0 z-10 bg-violet-100" aria-label="이미지 퍼즐 불러오는 중">
@@ -159,11 +234,13 @@ export function PuzzleBoard({ tiles, size, emptyTile, onTileClick, disabled, mov
         const colorClass = BLOCK_COLORS[tile % BLOCK_COLORS.length]
         const imageRow = Math.floor(tile / size)
         const imageCol = tile % size
+        const imageInset = (1 - TILE_SCALE) / 2
+        const imagePositionMax = size - TILE_SCALE
         const tileStyle = imageUrl
           ? {
               backgroundImage: `url(${imageUrl})`,
-              backgroundSize: `${size * 100}% ${size * 100}%`,
-              backgroundPosition: `${(imageCol / (size - 1)) * 100}% ${(imageRow / (size - 1)) * 100}%`,
+              backgroundSize: `${(size * 100) / TILE_SCALE}% ${(size * 100) / TILE_SCALE}%`,
+              backgroundPosition: `${((imageCol + imageInset) / imagePositionMax) * 100}% ${((imageRow + imageInset) / imagePositionMax) * 100}%`,
             }
           : null
 
@@ -178,7 +255,7 @@ export function PuzzleBoard({ tiles, size, emptyTile, onTileClick, disabled, mov
               width: `${tileSize}%`,
               height: `${tileSize}%`,
               touchAction: canMove ? 'none' : 'pan-y',
-              transform: `translate(${col * 100}%, ${row * 100}%) scale(0.94)`,
+              transform: `translate(${col * 100}%, ${row * 100}%) scale(${TILE_SCALE})`,
               transition: 'transform 150ms ease-out, opacity 420ms ease-in-out',
               willChange: 'transform, opacity',
               zIndex: movingTile === tile ? 2 : 1,
