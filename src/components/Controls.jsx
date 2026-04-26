@@ -83,7 +83,7 @@ export function Controls({
             className="rounded-lg border-2 border-white/80 bg-rose-200 px-2 py-1 text-xs font-extrabold text-rose-950 shadow-sm transition duration-150 ease-out hover:-translate-y-0.5 hover:bg-rose-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-rose-200 sm:rounded-xl sm:px-3 sm:py-1.5 sm:text-sm"
             onClick={onShuffle}
           >
-            {imageLoading ? '불러오는 중' : '새 게임'}
+            새 게임
           </button>
           <button
             type="button"

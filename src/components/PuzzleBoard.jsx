@@ -228,12 +228,14 @@ export function PuzzleBoard({ tiles, size, emptyTile, onTileClick, disabled, mov
         })}
       </div>
       {showThumbnail && (
-        <FloatingThumbnail
-          key={`${imageUrl}-${size}`}
-          imageUrl={imageUrl}
-          previewVisible={previewVisible}
-          onPreviewVisibleChange={setPreviewVisible}
-        />
+        <div className="pt-[3px] sm:pt-[6px]">
+          <FloatingThumbnail
+            key={`${imageUrl}-${size}`}
+            imageUrl={imageUrl}
+            previewVisible={previewVisible}
+            onPreviewVisibleChange={setPreviewVisible}
+          />
+        </div>
       )}
     </div>
   )
