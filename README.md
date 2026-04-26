@@ -1,5 +1,7 @@
 # Tiger-Slide
 
+[![All Contributors](https://img.shields.io/github/all-contributors/MTGVim/tiger-slide-sp?color=ee8449&style=flat-square)](#contributors)
+
 오프라인에서도 즐길 수 있는 React 기반 슬라이딩 퍼즐 게임입니다. 모바일 터치 조작과 키보드 조작을 모두 지원하며, GitHub Pages 배포와 PWA 설치를 염두에 두고 구성되어 있습니다.
 
 ![Tiger-Slide preview](public/preview.png)
@@ -69,6 +71,16 @@ GITHUB_PAGES=true npm run build
 ```
 
 일반 로컬/루트 경로 배포는 기본 `npm run build`를 사용합니다.
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 ## 검증
 
