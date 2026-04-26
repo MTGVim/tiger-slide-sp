@@ -165,12 +165,14 @@ function App() {
   const [imageLoading, setImageLoading] = useState(false)
   const [imageLoadingMessage, setImageLoadingMessage] = useState('')
   const [imageError, setImageError] = useState('')
+  const [linkCopied, setLinkCopied] = useState(false)
   const appScrollRef = useRef(null)
   const boardRef = useRef(null)
   const moveUnlockTimerRef = useRef(null)
   const shakeTimerRef = useRef(null)
   const landSoundTimerRef = useRef(null)
   const clearSoundTimerRef = useRef(null)
+  const linkCopiedTimerRef = useRef(null)
   const imageRequestIdRef = useRef(0)
   const imageObjectUrlRef = useRef(null)
   const mountedRef = useRef(true)
@@ -332,6 +334,7 @@ function App() {
       window.clearTimeout(shakeTimerRef.current)
       window.clearTimeout(landSoundTimerRef.current)
       window.clearTimeout(clearSoundTimerRef.current)
+      window.clearTimeout(linkCopiedTimerRef.current)
       if (imageObjectUrlRef.current) {
         URL.revokeObjectURL(imageObjectUrlRef.current)
         imageObjectUrlRef.current = null
@@ -386,6 +389,15 @@ function App() {
     resetGameState(size, enabled)
     setRandomEmptyTileEnabled(enabled)
   }, [resetGameState, size])
+
+  const copyCurrentLink = useCallback(async () => {
+    await navigator.clipboard.writeText(window.location.href)
+    setLinkCopied(true)
+    window.clearTimeout(linkCopiedTimerRef.current)
+    linkCopiedTimerRef.current = window.setTimeout(() => {
+      setLinkCopied(false)
+    }, 1200)
+  }, [])
 
   const shakeBoard = useCallback((direction) => {
     setShakeDirection(null)
@@ -515,6 +527,21 @@ function App() {
             <h1 className="font-['Bagel_Fat_One'] text-3xl font-black tracking-wide text-violet-950 drop-shadow-[0_3px_0_rgba(255,255,255,0.95)] sm:text-6xl">
               Tiger-Slide 🐯
             </h1>
+            <button
+              type="button"
+              className="absolute right-12 grid size-10 shrink-0 place-items-center rounded-full border-2 border-white/90 bg-white/85 text-violet-950 shadow-lg shadow-violet-950/10 transition duration-150 ease-out hover:-translate-y-0.5 hover:bg-white focus:outline-none focus:ring-4 focus:ring-violet-200 sm:right-14 sm:size-11 sm:border-4"
+              onClick={() => void copyCurrentLink()}
+              aria-label={linkCopied ? '링크가 복사됨' : '현재 링크 복사'}
+              title={linkCopied ? '복사됨' : '링크 복사'}
+            >
+              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              <span className={`absolute -bottom-7 rounded-full bg-violet-950 px-2 py-1 text-[0.65rem] font-extrabold text-white shadow-md transition duration-150 ${linkCopied ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'}`} aria-live="polite">
+                복사됨
+              </span>
+            </button>
             <a
               href="https://github.com/MTGVim/tiger-slide-sp"
               target="_blank"
