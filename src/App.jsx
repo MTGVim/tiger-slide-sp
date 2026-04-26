@@ -25,6 +25,9 @@ const MOVE_ANIMATION_MS = 170
 const SLIDE_LAND_SOUND_DELAY_MS = MOVE_ANIMATION_MS + 70
 const CLEAR_SOUND_DELAY_MS = SLIDE_LAND_SOUND_DELAY_MS + 120
 const MOVE_KEYS = new Set(['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'])
+const RESTART_KEY = 'r'
+const NEW_GAME_KEY = 'n'
+const COMPLETION_NEW_GAME_KEY = ' '
 const KEY_DIRECTIONS = {
   arrowup: 'up',
   w: 'up',
@@ -458,14 +461,39 @@ function App() {
           target.tagName === 'SELECT' ||
           target.tagName === 'TEXTAREA' ||
           target.isContentEditable)
+      const isControlFocus =
+        target instanceof Element &&
+        target.closest('button, a, [role="button"]') !== null
       const normalizedKey = event.key.toLowerCase()
+      const handlesMove = MOVE_KEYS.has(normalizedKey)
+      const handlesRestart = normalizedKey === RESTART_KEY
+      const handlesNewGame = normalizedKey === NEW_GAME_KEY
+      const handlesCompletedNewGame = completed && (event.code === 'Space' || event.key === COMPLETION_NEW_GAME_KEY)
 
-      if (isTyping || !MOVE_KEYS.has(normalizedKey)) return
+      if (isTyping || isControlFocus || (!handlesMove && !handlesRestart && !handlesNewGame && !handlesCompletedNewGame)) return
 
       event.preventDefault()
-      if (completed || isMoving || imageLoading) return
 
-      const tileIndex = getKeyboardMoveIndex(game.tiles, size, event.key, game.emptyTile)
+      if (isMoving || imageLoading) return
+
+      if (handlesCompletedNewGame) {
+        startNewGame(size)
+        return
+      }
+
+      if (handlesRestart) {
+        resetPuzzle()
+        return
+      }
+
+      if (handlesNewGame) {
+        startNewGame(size)
+        return
+      }
+
+      if (completed) return
+
+      const tileIndex = getKeyboardMoveIndex(game.tiles, size, event.key, game.emptyTile, event.shiftKey ? size - 1 : 1)
       if (tileIndex === -1) {
         shakeBoard(KEY_DIRECTIONS[normalizedKey])
         return
@@ -476,7 +504,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [completed, game.emptyTile, game.tiles, handleTileClick, imageLoading, isMoving, shakeBoard, size])
+  }, [completed, game.emptyTile, game.tiles, handleTileClick, imageLoading, isMoving, resetPuzzle, shakeBoard, size, startNewGame])
 
   return (
     <main ref={appScrollRef} className="fixed inset-0 overflow-y-auto overscroll-none bg-[radial-gradient(circle_at_top_left,#fde68a,transparent_32%),radial-gradient(circle_at_top_right,#fbcfe8,transparent_30%),radial-gradient(circle_at_bottom_right,#bfdbfe,transparent_34%),linear-gradient(135deg,#fff7ed,#fdf2f8_45%,#eef2ff)] px-2 py-3 text-violet-950 min-[360px]:px-3 sm:px-6 sm:py-8 lg:px-8">

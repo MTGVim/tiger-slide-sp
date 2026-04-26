@@ -70,26 +70,31 @@ export function moveTile(tiles, tileIndex, size, emptyTile = getEmptyTile(size))
   return { tiles: nextTiles, moved: true }
 }
 
-export function getKeyboardMoveIndex(tiles, size, key, emptyTile = getEmptyTile(size)) {
+export function getKeyboardMoveIndex(tiles, size, key, emptyTile = getEmptyTile(size), maxDistance = 1) {
   const emptyIndex = tiles.indexOf(emptyTile)
   const emptyRow = Math.floor(emptyIndex / size)
   const emptyCol = emptyIndex % size
   const normalizedKey = key.toLowerCase()
+  const distance = Math.max(1, maxDistance)
 
-  if ((normalizedKey === 'arrowup' || normalizedKey === 'w') && emptyRow < size - 1) {
-    return emptyIndex + size
+  if (normalizedKey === 'arrowup' || normalizedKey === 'w') {
+    if (emptyRow >= size - 1) return -1
+    return emptyIndex + size * Math.min(distance, size - 1 - emptyRow)
   }
 
-  if ((normalizedKey === 'arrowdown' || normalizedKey === 's') && emptyRow > 0) {
-    return emptyIndex - size
+  if (normalizedKey === 'arrowdown' || normalizedKey === 's') {
+    if (emptyRow <= 0) return -1
+    return emptyIndex - size * Math.min(distance, emptyRow)
   }
 
-  if ((normalizedKey === 'arrowleft' || normalizedKey === 'a') && emptyCol < size - 1) {
-    return emptyIndex + 1
+  if (normalizedKey === 'arrowleft' || normalizedKey === 'a') {
+    if (emptyCol >= size - 1) return -1
+    return emptyIndex + Math.min(distance, size - 1 - emptyCol)
   }
 
-  if ((normalizedKey === 'arrowright' || normalizedKey === 'd') && emptyCol > 0) {
-    return emptyIndex - 1
+  if (normalizedKey === 'arrowright' || normalizedKey === 'd') {
+    if (emptyCol <= 0) return -1
+    return emptyIndex - Math.min(distance, emptyCol)
   }
 
   return -1

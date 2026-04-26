@@ -128,7 +128,7 @@ export function PuzzleBoard({ tiles, size, emptyTile, onTileClick, disabled, mov
         className={`relative aspect-square min-w-0 ${showThumbnail ? 'flex-1' : 'w-full'} overflow-hidden rounded-2xl border-[5px] border-white bg-violet-100 shadow-md shadow-violet-950/10 outline-none focus:outline-none sm:rounded-[2rem] sm:border-[10px] ${
           shakeDirection ? `board-shake-${shakeDirection}` : ''
         }`}
-        aria-label={`${size} 곱하기 ${size} 슬라이딩 퍼즐판. 방향키 또는 WASD로 빈칸을 움직일 수 있습니다.`}
+        aria-label={`${size} 곱하기 ${size} 슬라이딩 퍼즐판. 방향키 또는 WASD로 이동하고, Shift와 함께 누르면 끝까지 밀 수 있습니다. R로 다시하기, N으로 새 게임을 시작할 수 있고, 완성 후에는 스페이스바로 새 게임을 시작할 수 있습니다.`}
         style={{
           touchAction: 'pan-y',
           backgroundImage: revealImage

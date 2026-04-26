@@ -84,6 +84,29 @@ describe('puzzle utilities', () => {
     expect(getKeyboardMoveIndex(solved, 3, 'ArrowRight', 4)).toBe(3)
   })
 
+  it('selects the farthest reachable tile when using Shift movement', () => {
+    const solved3 = createSolvedTiles(3)
+    const solved4 = createSolvedTiles(4)
+
+    expect(getKeyboardMoveIndex(solved3, 3, 'ArrowDown', 8, 2)).toBe(2)
+    expect(getKeyboardMoveIndex(solved3, 3, 's', 8, 2)).toBe(2)
+    expect(getKeyboardMoveIndex(solved3, 3, 'ArrowRight', 8, 2)).toBe(6)
+    expect(getKeyboardMoveIndex(solved3, 3, 'd', 8, 2)).toBe(6)
+
+    expect(getKeyboardMoveIndex(solved4, 4, 'ArrowDown', 15, 3)).toBe(3)
+    expect(getKeyboardMoveIndex(solved4, 4, 'ArrowRight', 15, 3)).toBe(12)
+
+    expect(getKeyboardMoveIndex(solved4, 4, 'ArrowDown', 10, 3)).toBe(2)
+    expect(getKeyboardMoveIndex(solved4, 4, 'ArrowRight', 10, 3)).toBe(8)
+    expect(getKeyboardMoveIndex(solved4, 4, 'ArrowUp', 10, 3)).toBe(14)
+    expect(getKeyboardMoveIndex(solved4, 4, 'ArrowLeft', 10, 3)).toBe(11)
+
+    expect(getKeyboardMoveIndex(solved4, 4, 'ArrowUp', 3, 3)).toBe(15)
+    expect(getKeyboardMoveIndex(solved4, 4, 'ArrowLeft', 12, 3)).toBe(15)
+    expect(getKeyboardMoveIndex(solved4, 4, 'ArrowUp', 15, 3)).toBe(-1)
+    expect(getKeyboardMoveIndex(solved4, 4, 'ArrowLeft', 15, 3)).toBe(-1)
+  })
+
   it('detects solved boards', () => {
     expect(isSolved([0, 1, 2, 3])).toBe(true)
     expect(isSolved([0, 2, 1, 3])).toBe(false)
