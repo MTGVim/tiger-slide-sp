@@ -37,7 +37,6 @@ export function Controls({
   elapsedTime,
   imageModeEnabled,
   imageSourceId,
-  imageLoading,
   randomEmptyTileEnabled,
   soundMuted,
   onSoundMutedChange,

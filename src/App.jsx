@@ -446,6 +446,18 @@ function App() {
   return (
     <main ref={appScrollRef} className="fixed inset-0 overflow-y-auto overscroll-none bg-[radial-gradient(circle_at_top_left,#fde68a,transparent_32%),radial-gradient(circle_at_top_right,#fbcfe8,transparent_30%),radial-gradient(circle_at_bottom_right,#bfdbfe,transparent_34%),linear-gradient(135deg,#fff7ed,#fdf2f8_45%,#eef2ff)] px-2 py-3 text-violet-950 min-[360px]:px-3 sm:px-6 sm:py-8 lg:px-8">
       <PwaUpdatePrompt />
+      <a
+        href="https://github.com/MTGVim/tiger-slide-sp"
+        target="_blank"
+        rel="noreferrer"
+        className="fixed bottom-4 right-4 z-20 grid size-12 place-items-center rounded-full border-2 border-white/90 bg-white/85 text-violet-950 shadow-xl shadow-violet-950/15 backdrop-blur transition duration-150 ease-out hover:-translate-y-0.5 hover:bg-white focus:outline-none focus:ring-4 focus:ring-violet-200 sm:bottom-6 sm:right-6 sm:size-14 sm:border-4"
+        aria-label="GitHub 저장소 열기"
+        title="GitHub 저장소"
+      >
+        <svg className="size-6 sm:size-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2C6.477 2 2 6.595 2 12.262c0 4.534 2.865 8.38 6.839 9.737.5.096.683-.223.683-.495 0-.245-.009-.894-.014-1.754-2.782.62-3.369-1.37-3.369-1.37-.455-1.184-1.11-1.5-1.11-1.5-.908-.636.069-.623.069-.623 1.004.072 1.532 1.06 1.532 1.06.892 1.565 2.341 1.113 2.91.851.091-.667.349-1.113.635-1.37-2.221-.26-4.555-1.14-4.555-5.073 0-1.121.39-2.038 1.029-2.756-.104-.261-.446-1.31.098-2.73 0 0 .84-.277 2.75 1.053A9.303 9.303 0 0 1 12 6.847c.85.004 1.705.117 2.504.344 1.909-1.33 2.748-1.053 2.748-1.053.546 1.42.203 2.469.1 2.73.64.718 1.028 1.635 1.028 2.756 0 3.944-2.337 4.81-4.566 5.064.359.319.678.947.678 1.909 0 1.379-.012 2.49-.012 2.828 0 .274.18.596.688.494C19.138 20.639 22 16.794 22 12.262 22 6.595 17.523 2 12 2Z" />
+        </svg>
+      </a>
       <div className="mx-auto flex w-full max-w-[600px] min-w-0 flex-col gap-2.5 sm:gap-4 lg:max-w-5xl lg:gap-6">
         <header className="relative grid gap-1.5 rounded-[1.25rem] border-2 border-white/80 bg-white/70 p-2 text-center shadow-md shadow-violet-950/10 backdrop-blur sm:gap-3 sm:rounded-[2rem] sm:border-4 sm:p-4 lg:p-5">
           <h1 className="hidden font-['Bagel_Fat_One'] text-4xl font-black tracking-wide text-violet-950 drop-shadow-[0_3px_0_rgba(255,255,255,0.95)] sm:block sm:text-6xl">
