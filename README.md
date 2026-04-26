@@ -2,6 +2,8 @@
 
 오프라인에서도 즐길 수 있는 React 기반 슬라이딩 퍼즐 게임입니다. 모바일 터치 조작과 키보드 조작을 모두 지원하며, GitHub Pages 배포와 PWA 설치를 염두에 두고 구성되어 있습니다.
 
+![Tiger-Slide preview](public/preview.png)
+
 ## 주요 기능
 
 - 3x3 `쉬움`, 4x4 `보통` 난이도 지원
