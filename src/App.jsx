@@ -6,6 +6,7 @@ import { PuzzleBoard } from './components/PuzzleBoard'
 import { PwaUpdatePrompt } from './components/PwaUpdatePrompt'
 import { RecordsPanel } from './components/RecordsPanel'
 import { getImageSource } from './utils/imageSources'
+import { getRandomCachedImage, saveCachedImage } from './utils/imageCache'
 import { createShuffledTiles, getEmptyTile, getKeyboardMoveIndex, getRandomEmptyTile, isSolved, moveTile } from './utils/puzzle'
 import { readRecords, saveBestRecord } from './utils/records'
 import {
@@ -132,20 +133,18 @@ async function cropImageFileToSquare(imageFile) {
   }
 }
 
-async function createCompressedImageUrl(imageUrl) {
+async function createCompressedImageBlob(imageUrl) {
   const response = await fetch(imageUrl, { cache: 'no-store' })
   if (!response.ok) throw new Error('이미지를 불러오지 못했어요.')
 
   const blob = await response.blob()
   const imageFile = new File([blob], 'puzzle-source-image', { type: blob.type || 'image/jpeg' })
   const squareImageFile = await cropImageFileToSquare(imageFile)
-  const compressedFile = await imageCompression(squareImageFile, {
+  return imageCompression(squareImageFile, {
     maxSizeMB: COMPRESSED_IMAGE_MAX_SIZE_MB,
     maxWidthOrHeight: COMPRESSED_IMAGE_MAX_EDGE_PX,
     useWebWorker: false,
   })
-
-  return URL.createObjectURL(compressedFile)
 }
 
 function App() {
@@ -199,6 +198,14 @@ function App() {
     setImageUrl(nextImageUrl)
   }, [])
 
+  const showCachedImage = useCallback(async (sourceId) => {
+    const cachedImage = await getRandomCachedImage(sourceId)
+    if (!cachedImage) return false
+
+    replaceImageUrl(URL.createObjectURL(cachedImage.blob))
+    return true
+  }, [replaceImageUrl])
+
   const loadRandomImage = useCallback(async (settings) => {
     imageRequestIdRef.current += 1
     const requestId = imageRequestIdRef.current
@@ -211,44 +218,58 @@ function App() {
       return
     }
 
-    if (navigator.onLine === false) {
-      replaceImageUrl(null)
-      setImageLoading(false)
-      setImageLoadingMessage('')
-      setImageError('온라인에서만 이미지 모드를 사용할 수 있어요.')
-      return
-    }
-
     replaceImageUrl(null)
     setImageLoading(true)
     setImageLoadingMessage('이미지 주소를 가져오는 중...')
     setImageError('')
+
+    if (navigator.onLine === false) {
+      const restored = await showCachedImage(settings.sourceId)
+      if (!mountedRef.current || imageRequestIdRef.current !== requestId) return
+
+      setImageLoading(false)
+      setImageLoadingMessage('')
+      if (restored) {
+        setImageError('')
+      } else {
+        replaceImageUrl(null)
+        setImageError('이 소스는 아직 저장된 이미지가 없어서 숫자 퍼즐로 표시해요. 온라인에서 한 번 이상 플레이하면 오프라인에서도 사용할 수 있어요.')
+      }
+      return
+    }
 
     try {
       const source = getImageSource(settings.sourceId)
       setImageLoadingMessage('이미지를 받는 중...')
       const sourceImageUrl = await source.fetchImage()
       setImageLoadingMessage('이미지를 압축하는 중...')
-      const compressedImageUrl = await createCompressedImageUrl(sourceImageUrl)
+      const compressedImageBlob = await createCompressedImageBlob(sourceImageUrl)
+      await saveCachedImage(settings.sourceId, compressedImageBlob)
 
       if (!mountedRef.current || imageRequestIdRef.current !== requestId) {
-        URL.revokeObjectURL(compressedImageUrl)
         return
       }
 
-      replaceImageUrl(compressedImageUrl)
+      replaceImageUrl(URL.createObjectURL(compressedImageBlob))
     } catch {
       if (!mountedRef.current || imageRequestIdRef.current !== requestId) return
-      replaceImageUrl(null)
       setImageLoadingMessage('네트워크 오류로 다시 받아오는 중...')
-      setImageError('이미지를 불러오지 못해서 숫자 퍼즐로 표시해요.')
+      const restored = await showCachedImage(settings.sourceId)
+      if (!mountedRef.current || imageRequestIdRef.current !== requestId) return
+
+      if (restored) {
+        setImageError('네트워크 문제로 저장해 둔 이미지를 보여줘요.')
+      } else {
+        replaceImageUrl(null)
+        setImageError('이미지를 불러오지 못해서 숫자 퍼즐로 표시해요.')
+      }
     } finally {
       if (mountedRef.current && imageRequestIdRef.current === requestId) {
         setImageLoading(false)
         setImageLoadingMessage('')
       }
     }
-  }, [replaceImageUrl])
+  }, [replaceImageUrl, showCachedImage])
 
   useEffect(() => {
     const normalizedSettings = writeImageModeSettings(imageModeSettings)
