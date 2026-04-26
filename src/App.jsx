@@ -1,14 +1,21 @@
 import imageCompression from 'browser-image-compression'
 import confetti from 'canvas-confetti'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Controls, SoundMuteButton } from './components/Controls'
+import { Controls } from './components/Controls'
 import { PuzzleBoard } from './components/PuzzleBoard'
 import { PwaUpdatePrompt } from './components/PwaUpdatePrompt'
 import { RecordsPanel } from './components/RecordsPanel'
 import { getImageSource } from './utils/imageSources'
-import { createShuffledTiles, getKeyboardMoveIndex, getRandomEmptyTile, isSolved, moveTile } from './utils/puzzle'
+import { createShuffledTiles, getEmptyTile, getKeyboardMoveIndex, getRandomEmptyTile, isSolved, moveTile } from './utils/puzzle'
 import { readRecords, saveBestRecord } from './utils/records'
-import { readImageModeSettings, readSoundMuted, writeImageModeSettings, writeSoundMuted } from './utils/settings'
+import {
+  readImageModeSettings,
+  readRandomEmptyTileEnabled,
+  readSoundMuted,
+  writeImageModeSettings,
+  writeRandomEmptyTileEnabled,
+  writeSoundMuted,
+} from './utils/settings'
 import { playClearSound, playSlideLandSound, playSlideSound } from './utils/sound'
 import { formatSeconds } from './utils/time'
 
@@ -74,8 +81,8 @@ function launchClearConfetti(boardElement) {
   })
 }
 
-function createGame(size) {
-  const emptyTile = getRandomEmptyTile(size)
+function createGame(size, randomEmptyTileEnabled) {
+  const emptyTile = randomEmptyTileEnabled ? getRandomEmptyTile(size) : getEmptyTile(size)
   const tiles = createShuffledTiles(size, { emptyTile })
   const now = Date.now()
 
@@ -144,7 +151,8 @@ async function createCompressedImageUrl(source) {
 
 function App() {
   const [size, setSize] = useState(DEFAULT_SIZE)
-  const [game, setGame] = useState(() => createGame(DEFAULT_SIZE))
+  const [randomEmptyTileEnabled, setRandomEmptyTileEnabled] = useState(() => readRandomEmptyTileEnabled())
+  const [game, setGame] = useState(() => createGame(DEFAULT_SIZE, randomEmptyTileEnabled))
   const [records, setRecords] = useState(() => readRecords())
   const [now, setNow] = useState(() => Date.now())
   const [isMoving, setIsMoving] = useState(false)
@@ -177,6 +185,10 @@ function App() {
       window.clearTimeout(clearSoundTimerRef.current)
     }
   }, [soundMuted])
+
+  useEffect(() => {
+    writeRandomEmptyTileEnabled(randomEmptyTileEnabled)
+  }, [randomEmptyTileEnabled])
 
   const replaceImageUrl = useCallback((nextImageUrl) => {
     if (imageObjectUrlRef.current) {
@@ -295,16 +307,16 @@ function App() {
     }
   }, [])
 
-  const resetGameState = useCallback((nextSize = size) => {
+  const resetGameState = useCallback((nextSize = size, nextRandomEmptyTileEnabled = randomEmptyTileEnabled) => {
     window.clearTimeout(moveUnlockTimerRef.current)
     window.clearTimeout(landSoundTimerRef.current)
     window.clearTimeout(clearSoundTimerRef.current)
     setIsMoving(false)
     setMovingTile(null)
     setSize(nextSize)
-    setGame(createGame(nextSize))
+    setGame(createGame(nextSize, nextRandomEmptyTileEnabled))
     setNow(Date.now())
-  }, [size])
+  }, [randomEmptyTileEnabled, size])
 
   const startNewGame = useCallback((nextSize = size) => {
     resetGameState(nextSize)
@@ -337,6 +349,11 @@ function App() {
   const handleImageSourceChange = useCallback((sourceId) => {
     resetGameState(size)
     setImageModeSettings((current) => ({ ...current, sourceId }))
+  }, [resetGameState, size])
+
+  const handleRandomEmptyTileEnabledChange = useCallback((enabled) => {
+    resetGameState(size, enabled)
+    setRandomEmptyTileEnabled(enabled)
   }, [resetGameState, size])
 
   const shakeBoard = useCallback((direction) => {
@@ -430,11 +447,7 @@ function App() {
     <main ref={appScrollRef} className="fixed inset-0 overflow-y-auto overscroll-none bg-[radial-gradient(circle_at_top_left,#fde68a,transparent_32%),radial-gradient(circle_at_top_right,#fbcfe8,transparent_30%),radial-gradient(circle_at_bottom_right,#bfdbfe,transparent_34%),linear-gradient(135deg,#fff7ed,#fdf2f8_45%,#eef2ff)] px-2 py-3 text-violet-950 min-[360px]:px-3 sm:px-6 sm:py-8 lg:px-8">
       <PwaUpdatePrompt />
       <div className="mx-auto flex w-full max-w-[600px] min-w-0 flex-col gap-2.5 sm:gap-4 lg:max-w-5xl lg:gap-6">
-        <header className="relative grid gap-1.5 rounded-[1.25rem] border-2 border-white/80 bg-white/70 p-2 pt-11 text-center shadow-2xl shadow-violet-200/50 backdrop-blur sm:gap-3 sm:rounded-[2rem] sm:border-4 sm:p-4 lg:p-5">
-          <SoundMuteButton
-            soundMuted={soundMuted}
-            onSoundMutedChange={setSoundMuted}
-          />
+        <header className="relative grid gap-1.5 rounded-[1.25rem] border-2 border-white/80 bg-white/70 p-2 text-center shadow-md shadow-violet-950/10 backdrop-blur sm:gap-3 sm:rounded-[2rem] sm:border-4 sm:p-4 lg:p-5">
           <h1 className="hidden font-['Bagel_Fat_One'] text-4xl font-black tracking-wide text-violet-950 drop-shadow-[0_3px_0_rgba(255,255,255,0.95)] sm:block sm:text-6xl">
             Tiger-Slide 🐯
           </h1>
@@ -445,8 +458,12 @@ function App() {
             imageModeEnabled={imageModeSettings.enabled}
             imageSourceId={imageModeSettings.sourceId}
             imageLoading={imageLoading}
+            randomEmptyTileEnabled={randomEmptyTileEnabled}
+            soundMuted={soundMuted}
+            onSoundMutedChange={setSoundMuted}
             onImageModeEnabledChange={handleImageModeEnabledChange}
             onImageSourceChange={handleImageSourceChange}
+            onRandomEmptyTileEnabledChange={handleRandomEmptyTileEnabledChange}
             onSizeChange={startNewGame}
             onShuffle={() => startNewGame(size)}
             onReset={resetPuzzle}

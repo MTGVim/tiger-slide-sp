@@ -5,7 +5,7 @@ export function SoundMuteButton({ soundMuted, onSoundMutedChange }) {
   return (
     <button
       type="button"
-      className={`absolute right-2 top-2 grid size-7 place-items-center rounded-lg border-2 border-white/80 shadow-sm transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 sm:right-4 sm:top-4 sm:size-9 sm:rounded-xl ${
+      className={`grid size-7 place-items-center rounded-lg border-2 border-white/80 shadow-sm transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 sm:size-9 sm:rounded-xl ${
         soundMuted
           ? 'bg-slate-200 text-slate-600 hover:bg-slate-300 focus:ring-slate-200'
           : 'bg-emerald-200 text-emerald-950 hover:bg-emerald-300 focus:ring-emerald-200'
@@ -38,8 +38,12 @@ export function Controls({
   imageModeEnabled,
   imageSourceId,
   imageLoading,
+  randomEmptyTileEnabled,
+  soundMuted,
+  onSoundMutedChange,
   onImageModeEnabledChange,
   onImageSourceChange,
+  onRandomEmptyTileEnabledChange,
   onSizeChange,
   onShuffle,
   onReset,
@@ -53,7 +57,7 @@ export function Controls({
           </span>
         </div>
 
-        <div className="flex flex-row gap-1.5 min-[360px]:gap-2">
+        <div className="flex flex-row items-center gap-1.5 min-[360px]:gap-2">
           {DIFFICULTIES.map((difficulty) => (
             <button
               key={difficulty.size}
@@ -68,6 +72,9 @@ export function Controls({
               {difficulty.label}
             </button>
           ))}
+          <div className="ml-2 sm:ml-3">
+            <SoundMuteButton soundMuted={soundMuted} onSoundMutedChange={onSoundMutedChange} />
+          </div>
         </div>
 
         <div className="flex flex-row gap-1.5 min-[360px]:gap-2">
@@ -84,6 +91,18 @@ export function Controls({
             onClick={onReset}
           >
             다시하기
+          </button>
+          <button
+            type="button"
+            className={`rounded-lg border-2 border-white/80 px-2 py-1 text-xs font-extrabold shadow-sm transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 sm:rounded-xl sm:px-3 sm:py-1.5 sm:text-sm ${
+              randomEmptyTileEnabled
+                ? 'bg-lime-300 text-lime-950 hover:bg-lime-200 focus:ring-lime-200'
+                : 'bg-lime-100 text-lime-900 hover:bg-lime-200 focus:ring-lime-200'
+            }`}
+            aria-pressed={randomEmptyTileEnabled}
+            onClick={() => onRandomEmptyTileEnabledChange(!randomEmptyTileEnabled)}
+          >
+            {randomEmptyTileEnabled ? '빈 칸 랜덤 ✓' : '빈 칸 랜덤 □'}
           </button>
         </div>
 

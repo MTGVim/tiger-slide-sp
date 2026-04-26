@@ -4,7 +4,7 @@ import { formatSeconds } from '../utils/time'
 export function RecordsPanel({ records }) {
   return (
     <section
-      className="rounded-2xl border-2 border-white/80 bg-white/70 p-2.5 shadow-xl shadow-violet-200/40 backdrop-blur sm:rounded-[2rem] sm:border-4 sm:p-5"
+      className="rounded-2xl border-2 border-white/80 bg-white/70 p-2.5 shadow-md shadow-violet-950/10 backdrop-blur sm:rounded-[2rem] sm:border-4 sm:p-5"
       aria-label="개인 최고 기록"
     >
       <h2 className="text-sm font-black text-violet-950 sm:text-lg">최고 기록</h2>

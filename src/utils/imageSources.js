@@ -1,4 +1,4 @@
-export const DEFAULT_IMAGE_SOURCE_ID = 'dog-ceo'
+export const DEFAULT_IMAGE_SOURCE_ID = 'random-dog'
 
 const STATIC_IMAGE_PATTERN = /\.(?:jpe?g|png|webp)(?:$|[?#])/i
 
@@ -72,7 +72,7 @@ export const IMAGE_SOURCES = [
 ]
 
 export function getImageSource(sourceId) {
-  return IMAGE_SOURCES.find((source) => source.id === sourceId) ?? IMAGE_SOURCES[0]
+  return IMAGE_SOURCES.find((source) => source.id === sourceId) ?? IMAGE_SOURCES.find((source) => source.id === DEFAULT_IMAGE_SOURCE_ID)
 }
 
 export function isValidImageSourceId(sourceId) {
