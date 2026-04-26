@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { createSolvedTiles, isAdjacent } from '../utils/puzzle'
+import { createSolvedTiles, isReachableBySlide } from '../utils/puzzle'
 import { readImagePreviewVisible, writeImagePreviewVisible } from '../utils/settings'
 
 const BLOCK_COLORS = [
@@ -22,13 +22,17 @@ function isSwipeTowardEmpty(tileIndex, emptyIndex, size, dx, dy) {
   const emptyRow = Math.floor(emptyIndex / size)
   const emptyCol = emptyIndex % size
 
-  if (Math.abs(dx) > Math.abs(dy)) {
-    if (emptyRow !== tileRow) return false
+  if (tileRow === emptyRow) {
+    if (Math.abs(dx) < Math.abs(dy)) return false
     return (emptyCol < tileCol && dx < 0) || (emptyCol > tileCol && dx > 0)
   }
 
-  if (emptyCol !== tileCol) return false
-  return (emptyRow < tileRow && dy < 0) || (emptyRow > tileRow && dy > 0)
+  if (tileCol === emptyCol) {
+    if (Math.abs(dy) < Math.abs(dx)) return false
+    return (emptyRow < tileRow && dy < 0) || (emptyRow > tileRow && dy > 0)
+  }
+
+  return false
 }
 
 function FloatingThumbnail({ imageUrl, previewVisible, onPreviewVisibleChange }) {
@@ -175,7 +179,7 @@ export function PuzzleBoard({ tiles, size, emptyTile, onTileClick, disabled, mov
           const index = tilePositions.get(tile)
           const row = Math.floor(index / size)
           const col = index % size
-          const canMove = !disabled && isAdjacent(index, emptyIndex, size)
+          const canMove = !disabled && isReachableBySlide(index, emptyIndex, size)
           const colorClass = BLOCK_COLORS[tile % BLOCK_COLORS.length]
           const imageRow = Math.floor(tile / size)
           const imageCol = tile % size

@@ -37,6 +37,15 @@ export function isAdjacent(a, b, size) {
   return Math.abs(ar - br) + Math.abs(ac - bc) === 1
 }
 
+export function isReachableBySlide(tileIndex, emptyIndex, size) {
+  const tileRow = Math.floor(tileIndex / size)
+  const tileCol = tileIndex % size
+  const emptyRow = Math.floor(emptyIndex / size)
+  const emptyCol = emptyIndex % size
+
+  return tileRow === emptyRow || tileCol === emptyCol
+}
+
 export function isSolved(tiles) {
   return tiles.every((tile, index) => tile === index)
 }
@@ -44,12 +53,19 @@ export function isSolved(tiles) {
 export function moveTile(tiles, tileIndex, size, emptyTile = getEmptyTile(size)) {
   const emptyIndex = tiles.indexOf(emptyTile)
 
-  if (tileIndex < 0 || tileIndex >= tiles.length || !isAdjacent(tileIndex, emptyIndex, size)) {
+  if (tileIndex < 0 || tileIndex >= tiles.length || !isReachableBySlide(tileIndex, emptyIndex, size) || tileIndex === emptyIndex) {
     return { tiles, moved: false }
   }
 
   const nextTiles = [...tiles]
-  ;[nextTiles[tileIndex], nextTiles[emptyIndex]] = [nextTiles[emptyIndex], nextTiles[tileIndex]]
+  const step = tileIndex < emptyIndex ? 1 : -1
+  const sameRow = Math.floor(tileIndex / size) === Math.floor(emptyIndex / size)
+  const offset = sameRow ? step : step * size
+
+  for (let index = emptyIndex; index !== tileIndex; index -= offset) {
+    nextTiles[index] = nextTiles[index - offset]
+  }
+  nextTiles[tileIndex] = emptyTile
 
   return { tiles: nextTiles, moved: true }
 }

@@ -5,6 +5,7 @@ import {
   getNeighbors,
   getRandomEmptyTile,
   isAdjacent,
+  isReachableBySlide,
   isSolved,
   moveTile,
   shuffleTiles,
@@ -34,19 +35,34 @@ describe('puzzle utilities', () => {
     expect(isAdjacent(2, 3, 3)).toBe(false)
   })
 
-  it('moves only tiles adjacent to the empty slot', () => {
+  it('detects tiles that can slide across the empty slot row or column', () => {
+    expect(isReachableBySlide(5, 8, 3)).toBe(true)
+    expect(isReachableBySlide(2, 8, 3)).toBe(true)
+    expect(isReachableBySlide(0, 8, 3)).toBe(false)
+    expect(isReachableBySlide(1, 4, 3)).toBe(true)
+  })
+
+  it('moves tiles across the empty slot in one slide', () => {
     const solved = createSolvedTiles(3)
     const adjacent = moveTile(solved, 5, 3)
     expect(adjacent.moved).toBe(true)
     expect(adjacent.tiles).toEqual([0, 1, 2, 3, 4, 8, 6, 7, 5])
 
+    const horizontalTwoStep = moveTile([0, 8, 1, 3, 4, 2, 6, 7, 5], 2, 3)
+    expect(horizontalTwoStep.moved).toBe(true)
+    expect(horizontalTwoStep.tiles).toEqual([0, 1, 8, 3, 4, 2, 6, 7, 5])
+
+    const verticalTwoStep = moveTile([0, 1, 2, 3, 4, 5, 6, 7, 8], 2, 3)
+    expect(verticalTwoStep.moved).toBe(true)
+    expect(verticalTwoStep.tiles).toEqual([0, 1, 8, 3, 4, 2, 6, 7, 5])
+
     const customEmpty = moveTile(solved, 3, 3, 4)
     expect(customEmpty.moved).toBe(true)
     expect(customEmpty.tiles).toEqual([0, 1, 2, 4, 3, 5, 6, 7, 8])
 
-    const nonAdjacent = moveTile(solved, 0, 3)
-    expect(nonAdjacent.moved).toBe(false)
-    expect(nonAdjacent.tiles).toBe(solved)
+    const unreachable = moveTile(solved, 0, 3)
+    expect(unreachable.moved).toBe(false)
+    expect(unreachable.tiles).toBe(solved)
   })
 
   it('selects the tile that moves when using Arrow or WASD keys', () => {
