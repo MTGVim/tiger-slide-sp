@@ -84,14 +84,13 @@ function launchClearConfetti(boardElement) {
 function createGame(size, randomEmptyTileEnabled) {
   const emptyTile = randomEmptyTileEnabled ? getRandomEmptyTile(size) : getEmptyTile(size)
   const tiles = createShuffledTiles(size, { emptyTile })
-  const now = Date.now()
 
   return {
     tiles,
     initialTiles: tiles,
     emptyTile,
     moves: 0,
-    startedAt: now,
+    startedAt: null,
     completedAt: null,
   }
 }
@@ -175,7 +174,7 @@ function App() {
 
   const solved = useMemo(() => isSolved(game.tiles), [game.tiles])
   const completed = solved && game.moves > 0
-  const elapsedSeconds = Math.max(0, Math.floor(((game.completedAt ?? now) - game.startedAt) / 1000))
+  const elapsedSeconds = game.startedAt == null ? 0 : Math.max(0, Math.floor(((game.completedAt ?? now) - game.startedAt) / 1000))
 
   useEffect(() => {
     writeSoundMuted(soundMuted)
@@ -251,15 +250,14 @@ function App() {
   }, [imageModeSettings, loadRandomImage])
 
   useEffect(() => {
-    if (completed) return undefined
+    if (completed || game.startedAt == null) return undefined
 
     const timerId = window.setInterval(() => {
       setNow(Date.now())
     }, 1000)
 
     return () => window.clearInterval(timerId)
-  }, [completed])
-
+  }, [completed, game.startedAt])
   useEffect(() => {
     mountedRef.current = true
     const appScrollElement = appScrollRef.current
@@ -330,15 +328,14 @@ function App() {
     setIsMoving(false)
     setMovingTile(null)
 
-    const startedAt = Date.now()
     setGame((current) => ({
       ...current,
       tiles: current.initialTiles,
       moves: 0,
-      startedAt,
+      startedAt: null,
       completedAt: null,
     }))
-    setNow(startedAt)
+    setNow(Date.now())
   }, [])
 
   const handleImageModeEnabledChange = useCallback((enabled) => {
@@ -388,10 +385,11 @@ function App() {
     }, MOVE_ANIMATION_MS)
 
     const nextMoves = game.moves + 1
+    const startedAt = game.startedAt ?? Date.now()
     const completedAt = isSolved(result.tiles) ? Date.now() : null
 
     if (completedAt) {
-      const seconds = Math.max(0, Math.floor((completedAt - game.startedAt) / 1000))
+      const seconds = Math.max(0, Math.floor((completedAt - startedAt) / 1000))
       const nextRecordState = saveBestRecord(size, {
         moves: nextMoves,
         seconds,
@@ -410,6 +408,7 @@ function App() {
       ...game,
       tiles: result.tiles,
       moves: nextMoves,
+      startedAt,
       completedAt,
     })
   }, [completed, game, imageLoading, isMoving, size, soundMuted])
