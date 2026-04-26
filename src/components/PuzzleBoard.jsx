@@ -139,7 +139,7 @@ export function PuzzleBoard({ tiles, size, emptyTile, onTileClick, disabled, mov
           backgroundSize: revealImage ? 'cover' : `${tileSize}% ${tileSize}%`,
         }}
       >
-        {imageUrl && (
+        {imageUrl && !revealImage && (
           <div
             className={`pointer-events-none absolute bg-center bg-cover bg-no-repeat transition-opacity duration-150 ${previewVisible ? 'opacity-35' : 'opacity-0'}`}
             style={{
