@@ -53,7 +53,7 @@ function FloatingThumbnail({ imageUrl, previewVisible, onPreviewVisibleChange })
     </button>
   )
 }
-export function PuzzleBoard({ tiles, size, emptyTile, onTileClick, disabled, movingTile, shakeDirection, imageUrl, imageLoading, completed }) {
+export function PuzzleBoard({ tiles, size, emptyTile, onTileClick, disabled, movingTile, shakeDirection, imageUrl, imageLoading, imageLoadingMessage, completed }) {
   const emptyIndex = tiles.indexOf(emptyTile)
   const tileSize = 100 / size
   const tileInsetPercent = (tileSize * (1 - TILE_SCALE)) / 2
@@ -168,6 +168,7 @@ export function PuzzleBoard({ tiles, size, emptyTile, onTileClick, disabled, mov
               <div className="grid place-items-center gap-2 rounded-2xl border-2 border-white/90 bg-white/85 px-4 py-3 text-xs font-black text-violet-950 shadow-xl shadow-violet-950/20 sm:rounded-3xl sm:border-4 sm:px-5 sm:py-4 sm:text-sm">
                 <div className="size-7 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600 sm:size-9" aria-hidden="true" />
                 <span>이미지 불러오는 중</span>
+                {imageLoadingMessage && <span className="text-[11px] font-bold text-violet-700 sm:text-xs">{imageLoadingMessage}</span>}
               </div>
             </div>
           </div>
