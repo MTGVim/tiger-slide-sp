@@ -1,21 +1,31 @@
+const SLIDE_AUDIO_POOL_SIZE = 4
+
 let audioContext
-let slideAudio
+let slideAudioPool
+let slideAudioIndex = 0
 let clearAudio
 
 function getAssetUrl(path) {
   return `${import.meta.env.BASE_URL}${path}`
 }
 
+function createSlideAudio() {
+  const audio = new Audio(getAssetUrl('sounds/slide-smooth.wav'))
+  audio.preload = 'auto'
+  audio.volume = 0.16
+  return audio
+}
+
 function getSlideAudio() {
   if (typeof window === 'undefined') return null
 
-  if (!slideAudio) {
-    slideAudio = new Audio(getAssetUrl('sounds/slide-smooth.wav'))
-    slideAudio.preload = 'auto'
-    slideAudio.volume = 0.16
+  if (!slideAudioPool) {
+    slideAudioPool = Array.from({ length: SLIDE_AUDIO_POOL_SIZE }, createSlideAudio)
   }
 
-  return slideAudio
+  const audio = slideAudioPool[slideAudioIndex]
+  slideAudioIndex = (slideAudioIndex + 1) % slideAudioPool.length
+  return audio
 }
 
 function getClearAudio() {
