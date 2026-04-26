@@ -6,43 +6,49 @@ describe('sound utilities', () => {
     vi.unstubAllGlobals()
   })
 
-  it('rotates slide sound playback through a bounded audio pool', async () => {
-    const audioInstances = []
-    const playedInstances = []
-
-    class MockAudio {
-      constructor(src) {
-        this.src = src
-        this.currentTime = 3
-        this.preload = ''
-        this.volume = 1
-        this.play = vi.fn(() => {
-          playedInstances.push(this)
-          return Promise.resolve()
-        })
-        audioInstances.push(this)
+  it('unlocks shared audio and plays slide buffers through Web Audio', async () => {
+    const fetchMock = vi.fn(() => Promise.resolve({ ok: true, arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) }))
+    const startMock = vi.fn()
+    const gainNode = { gain: { setValueAtTime: vi.fn() }, connect: vi.fn() }
+    const sourceNode = { connect: vi.fn(), start: startMock }
+    const context = {
+      state: 'running',
+      currentTime: 1,
+      destination: {},
+      resume: vi.fn(() => Promise.resolve()),
+      decodeAudioData: vi.fn(() => Promise.resolve({ duration: 0.2 })),
+      createBufferSource: vi.fn(() => sourceNode),
+      createGain: vi.fn(() => gainNode),
+      createBuffer: vi.fn(),
+      createBiquadFilter: vi.fn(),
+      createOscillator: vi.fn(),
+    }
+    class AudioContextMock {
+      constructor() {
+        return context
       }
     }
 
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('window', { AudioContext: AudioContextMock })
+
+    const { playSlideSound, unlockAudio } = await import('../utils/sound.js')
+
+    expect(await unlockAudio()).toBe(true)
+    await playSlideSound()
+
+    expect(fetchMock).toHaveBeenCalledWith('/sounds/slide-smooth.wav')
+    expect(context.decodeAudioData.mock.calls.length).toBeGreaterThanOrEqual(1)
+    expect(context.createBufferSource).toHaveBeenCalledTimes(1)
+    expect(gainNode.gain.setValueAtTime).toHaveBeenCalledWith(0.16, 1)
+    expect(startMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns false when audio context cannot be created', async () => {
     vi.stubGlobal('window', {})
-    vi.stubGlobal('Audio', MockAudio)
 
-    const { playSlideSound } = await import('../utils/sound.js')
+    const { unlockAudio } = await import('../utils/sound.js')
 
-    for (let index = 0; index < 5; index += 1) {
-      playSlideSound()
-    }
-
-    expect(audioInstances).toHaveLength(4)
-    expect(playedInstances).toEqual([
-      audioInstances[0],
-      audioInstances[1],
-      audioInstances[2],
-      audioInstances[3],
-      audioInstances[0],
-    ])
-    expect(audioInstances.map((audio) => audio.currentTime)).toEqual([0, 0, 0, 0])
-    expect(audioInstances.every((audio) => audio.preload === 'auto')).toBe(true)
-    expect(audioInstances.every((audio) => audio.volume === 0.16)).toBe(true)
+    expect(await unlockAudio()).toBe(false)
   })
 })

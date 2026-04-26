@@ -16,7 +16,7 @@ import {
   writeRandomEmptyTileEnabled,
   writeSoundMuted,
 } from './utils/settings'
-import { playClearSound, playSlideLandSound, playSlideSound } from './utils/sound'
+import { playClearSound, playSlideLandSound, playSlideSound, unlockAudio } from './utils/sound'
 import { formatSeconds } from './utils/time'
 
 const DEFAULT_SIZE = 3
@@ -382,9 +382,12 @@ function App() {
     if (!result.moved) return
 
     if (!soundMuted) {
-      playSlideSound()
+      void unlockAudio()
+      void playSlideSound()
       window.clearTimeout(landSoundTimerRef.current)
-      landSoundTimerRef.current = window.setTimeout(playSlideLandSound, SLIDE_LAND_SOUND_DELAY_MS)
+      landSoundTimerRef.current = window.setTimeout(() => {
+        void playSlideLandSound()
+      }, SLIDE_LAND_SOUND_DELAY_MS)
     }
     setMovingTile(game.tiles[tileIndex])
     setIsMoving(true)
@@ -409,7 +412,9 @@ function App() {
       setRecords(nextRecordState.records)
       if (!soundMuted) {
         window.clearTimeout(clearSoundTimerRef.current)
-        clearSoundTimerRef.current = window.setTimeout(playClearSound, CLEAR_SOUND_DELAY_MS)
+        clearSoundTimerRef.current = window.setTimeout(() => {
+          void playClearSound()
+        }, CLEAR_SOUND_DELAY_MS)
       }
       launchClearConfetti(boardRef.current)
     }

@@ -1,43 +1,10 @@
-const SLIDE_AUDIO_POOL_SIZE = 4
-
 let audioContext
-let slideAudioPool
-let slideAudioIndex = 0
-let clearAudio
+let audioUnlocked = false
+let slideBufferPromise
+let clearBufferPromise
 
 function getAssetUrl(path) {
   return `${import.meta.env.BASE_URL}${path}`
-}
-
-function createSlideAudio() {
-  const audio = new Audio(getAssetUrl('sounds/slide-smooth.wav'))
-  audio.preload = 'auto'
-  audio.volume = 0.16
-  return audio
-}
-
-function getSlideAudio() {
-  if (typeof window === 'undefined') return null
-
-  if (!slideAudioPool) {
-    slideAudioPool = Array.from({ length: SLIDE_AUDIO_POOL_SIZE }, createSlideAudio)
-  }
-
-  const audio = slideAudioPool[slideAudioIndex]
-  slideAudioIndex = (slideAudioIndex + 1) % slideAudioPool.length
-  return audio
-}
-
-function getClearAudio() {
-  if (typeof window === 'undefined') return null
-
-  if (!clearAudio) {
-    clearAudio = new Audio(getAssetUrl('sounds/tada-meme.mp3'))
-    clearAudio.preload = 'auto'
-    clearAudio.volume = 0.55
-  }
-
-  return clearAudio
 }
 
 function getAudioContext() {
@@ -50,24 +17,92 @@ function getAudioContext() {
     audioContext = new AudioContextConstructor()
   }
 
-  if (audioContext.state === 'suspended') {
-    audioContext.resume()
-  }
-
   return audioContext
 }
 
-export function playSlideSound() {
-  const audio = getSlideAudio()
-  if (!audio) return
+async function fetchAudioBuffer(path) {
+  const context = getAudioContext()
+  if (!context) return null
 
-  audio.currentTime = 0
-  audio.play().catch(() => {})
+  const response = await fetch(getAssetUrl(path))
+  if (!response.ok) throw new Error('사운드를 불러오지 못했어요.')
+  const arrayBuffer = await response.arrayBuffer()
+  return context.decodeAudioData(arrayBuffer)
 }
 
-export function playSlideLandSound() {
+function getSlideBufferPromise() {
+  if (!slideBufferPromise) {
+    slideBufferPromise = fetchAudioBuffer('sounds/slide-smooth.wav').catch((error) => {
+      slideBufferPromise = null
+      throw error
+    })
+  }
+
+  return slideBufferPromise
+}
+
+function getClearBufferPromise() {
+  if (!clearBufferPromise) {
+    clearBufferPromise = fetchAudioBuffer('sounds/tada-meme.mp3').catch((error) => {
+      clearBufferPromise = null
+      throw error
+    })
+  }
+
+  return clearBufferPromise
+}
+
+function playBuffer(buffer, volume) {
   const context = getAudioContext()
-  if (!context) return
+  if (!context || !buffer || context.state !== 'running') return false
+
+  const source = context.createBufferSource()
+  source.buffer = buffer
+  const gain = context.createGain()
+  gain.gain.setValueAtTime(volume, context.currentTime)
+  source.connect(gain)
+  gain.connect(context.destination)
+  source.start()
+  return true
+}
+
+export async function unlockAudio() {
+  const context = getAudioContext()
+  if (!context) return false
+
+  try {
+    if (context.state === 'suspended') {
+      await context.resume()
+    }
+
+    audioUnlocked = context.state === 'running'
+    if (audioUnlocked) {
+      void getSlideBufferPromise()
+      void getClearBufferPromise()
+    }
+    return audioUnlocked
+  } catch {
+    audioUnlocked = false
+    return false
+  }
+}
+
+export async function playSlideSound() {
+  if (!(await unlockAudio())) return
+
+  try {
+    const buffer = await getSlideBufferPromise()
+    playBuffer(buffer, 0.16)
+  } catch {
+    return
+  }
+}
+
+export async function playSlideLandSound() {
+  if (!(await unlockAudio())) return
+
+  const context = getAudioContext()
+  if (!context || context.state !== 'running') return
 
   const startTime = context.currentTime
   playImpactNoise(context, startTime, 0.038, 0.16)
@@ -131,10 +166,13 @@ function playImpactTone(context, startTime, frequency, duration, volume, type, c
   oscillator.stop(startTime + duration)
 }
 
-export function playClearSound() {
-  const audio = getClearAudio()
-  if (!audio) return
+export async function playClearSound() {
+  if (!(await unlockAudio())) return
 
-  audio.currentTime = 0
-  audio.play().catch(() => {})
+  try {
+    const buffer = await getClearBufferPromise()
+    playBuffer(buffer, 0.55)
+  } catch {
+    return
+  }
 }
