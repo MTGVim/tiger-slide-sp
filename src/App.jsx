@@ -529,7 +529,7 @@ function App() {
             </h1>
             <button
               type="button"
-              className="absolute right-12 grid size-10 shrink-0 place-items-center rounded-full border-2 border-white/90 bg-white/85 text-violet-950 shadow-lg shadow-violet-950/10 transition duration-150 ease-out hover:-translate-y-0.5 hover:bg-white focus:outline-none focus:ring-4 focus:ring-violet-200 sm:right-14 sm:size-11 sm:border-4"
+              className="absolute left-0 grid size-10 shrink-0 place-items-center rounded-full border-2 border-white/90 bg-white/85 text-violet-950 shadow-lg shadow-violet-950/10 transition duration-150 ease-out hover:-translate-y-0.5 hover:bg-white focus:outline-none focus:ring-4 focus:ring-violet-200 sm:size-11 sm:border-4"
               onClick={() => void copyCurrentLink()}
               aria-label={linkCopied ? '링크가 복사됨' : '현재 링크 복사'}
               title={linkCopied ? '복사됨' : '링크 복사'}
