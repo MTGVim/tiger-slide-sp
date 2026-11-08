@@ -36,6 +36,12 @@
     "vitest": "^4.1.5"
   },
   "overrides": {
-    "tmp": "^0.2.7"
+    "tmp": "^0.2.7",
+    "@eslint/config-array": {
+      "minimatch": "^11.0.1"
+    },
+    "eslint": {
+      "minimatch": "^11.0.1"
+    }
   }
 }
